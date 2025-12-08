@@ -2,7 +2,7 @@
 Menu model for navigation and permission control.
 """
 from typing import Optional
-from sqlalchemy import BigInteger, Integer, SmallInteger, String
+from sqlalchemy import Integer, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseModel, TenantMixin
@@ -15,8 +15,8 @@ class Menu(BaseModel, TenantMixin):
     __table_args__ = {"comment": "菜单表"}
     
     # Parent relationship
-    parent_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    parent_id: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         index=True,
         comment="父菜单ID,NULL表示顶级菜单"

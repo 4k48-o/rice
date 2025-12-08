@@ -85,12 +85,12 @@ class SnowflakeIDGenerator:
             timestamp = self._current_millis()
         return timestamp
     
-    def generate_id(self) -> int:
+    def generate_id(self) -> str:
         """
-        Generate a unique Snowflake ID.
+        Generate a unique Snowflake ID as string.
         
         Returns:
-            64-bit unique ID
+            Snowflake ID as string (64-bit unique ID converted to string)
             
         Raises:
             RuntimeError: If clock moves backwards
@@ -136,24 +136,28 @@ class SnowflakeIDGenerator:
                 self.sequence
             )
             
-            return snowflake_id
+            # Return as string
+            return str(snowflake_id)
     
-    def parse_id(self, snowflake_id: int) -> dict:
+    def parse_id(self, snowflake_id: str) -> dict:
         """
         Parse a Snowflake ID into its components.
         
         Args:
-            snowflake_id: Snowflake ID to parse
+            snowflake_id: Snowflake ID to parse (as string)
             
         Returns:
             Dictionary with timestamp, datacenter_id, worker_id, sequence
         """
-        timestamp_offset = (snowflake_id >> self.TIMESTAMP_SHIFT) & ((1 << self.TIMESTAMP_BITS) - 1)
+        # Convert string to int for parsing
+        snowflake_id_int = int(snowflake_id)
+        
+        timestamp_offset = (snowflake_id_int >> self.TIMESTAMP_SHIFT) & ((1 << self.TIMESTAMP_BITS) - 1)
         timestamp = timestamp_offset + self.epoch
         
-        datacenter_id = (snowflake_id >> self.DATACENTER_SHIFT) & self.MAX_DATACENTER_ID
-        worker_id = (snowflake_id >> self.WORKER_SHIFT) & self.MAX_WORKER_ID
-        sequence = snowflake_id & self.MAX_SEQUENCE
+        datacenter_id = (snowflake_id_int >> self.DATACENTER_SHIFT) & self.MAX_DATACENTER_ID
+        worker_id = (snowflake_id_int >> self.WORKER_SHIFT) & self.MAX_WORKER_ID
+        sequence = snowflake_id_int & self.MAX_SEQUENCE
         
         return {
             "timestamp": timestamp,
@@ -180,13 +184,13 @@ def init_snowflake(datacenter_id: int, worker_id: int, epoch: int) -> None:
     _snowflake_generator = SnowflakeIDGenerator(datacenter_id, worker_id, epoch)
 
 
-def generate_id() -> int:
+def generate_id() -> str:
     """
     Generate a Snowflake ID using the global generator.
     
     Returns:
-        64-bit unique ID
-        
+        Snowflake ID as string (64-bit unique ID converted to string)
+    
     Raises:
         RuntimeError: If generator is not initialized
     """
@@ -197,12 +201,12 @@ def generate_id() -> int:
     return _snowflake_generator.generate_id()
 
 
-def parse_id(snowflake_id: int) -> dict:
+def parse_id(snowflake_id: str) -> dict:
     """
     Parse a Snowflake ID using the global generator.
     
     Args:
-        snowflake_id: Snowflake ID to parse
+        snowflake_id: Snowflake ID to parse (as string)
         
     Returns:
         Dictionary with timestamp, datacenter_id, worker_id, sequence

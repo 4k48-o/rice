@@ -2,7 +2,7 @@
 Department model for organizational structure.
 """
 from typing import Optional
-from sqlalchemy import BigInteger, Integer, String
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseModel, TenantMixin
@@ -15,8 +15,8 @@ class Department(BaseModel, TenantMixin):
     __table_args__ = {"comment": "部门表"}
     
     # Parent relationship
-    parent_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    parent_id: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         index=True,
         comment="父部门ID,NULL表示顶级部门"
@@ -36,8 +36,8 @@ class Department(BaseModel, TenantMixin):
     )
     
     # Leader
-    leader_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    leader_id: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         comment="部门负责人ID"
     )

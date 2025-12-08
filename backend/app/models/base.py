@@ -4,7 +4,7 @@ Base model with common fields for all tables.
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -29,13 +29,13 @@ class TimestampMixin:
         onupdate=func.now(),
         comment="更新时间"
     )
-    created_by: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    created_by: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         comment="创建人ID"
     )
-    updated_by: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    updated_by: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         comment="更新人ID"
     )
@@ -56,8 +56,8 @@ class SoftDeleteMixin:
         nullable=True,
         comment="删除时间"
     )
-    deleted_by: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    deleted_by: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         comment="删除人ID"
     )
@@ -66,10 +66,10 @@ class SoftDeleteMixin:
 class TenantMixin:
     """Mixin for multi-tenant support."""
     
-    tenant_id: Mapped[int] = mapped_column(
-        BigInteger,
+    tenant_id: Mapped[str] = mapped_column(
+        String(50),
         nullable=False,
-        default=0,
+        default="0",
         server_default="0",
         index=True,
         comment="租户ID,0表示平台级"
@@ -84,8 +84,8 @@ class BaseModel(Base, TimestampMixin, SoftDeleteMixin):
     
     __abstract__ = True
     
-    id: Mapped[int] = mapped_column(
-        BigInteger,
+    id: Mapped[str] = mapped_column(
+        String(50),
         primary_key=True,
         comment="主键ID"
     )
@@ -102,7 +102,7 @@ from sqlalchemy import event
 @event.listens_for(BaseModel, "before_insert", propagate=True)
 def generate_snowflake_id(mapper, connection, target):
     """Generate Snowflake ID for new records."""
-    if target.id is None:
+    if target.id is None or target.id == "":
         from app.utils.snowflake import generate_id
-        target.id = generate_id()
+        target.id = generate_id()  # generate_id() now returns str
 

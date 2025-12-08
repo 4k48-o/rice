@@ -55,7 +55,7 @@ async def init_system_data(
         real_name="Super Admin",
         user_type=0,  # Superadmin
         status=1,
-        tenant_id=0  # System tenant
+        tenant_id="0"  # System tenant
     )
     db.add(admin)
     

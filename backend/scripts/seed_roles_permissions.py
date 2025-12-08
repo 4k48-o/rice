@@ -71,9 +71,10 @@ async def seed_roles_permissions():
         # Create permissions
         permission_map = {}
         for perm_data in permissions_data:
-            perm = Permission(**perm_data)
+            # ID 会自动通过 BaseModel 的雪花算法生成，无需手动设置
+            perm = Permission(**perm_data, tenant_id=tenant_id)
             db.add(perm)
-            await db.flush()
+            await db.flush()  # 刷新以获取自动生成的 ID
             await db.refresh(perm)
             permission_map[perm.code] = perm.id
             print(f"✅ Created permission: {perm.name} ({perm.code})")

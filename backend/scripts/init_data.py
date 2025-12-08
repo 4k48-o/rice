@@ -21,14 +21,15 @@ async def init_data():
         # For simplicity, we just try to create if not exists or ignore unique constraint error logic properly
         # But here we just assume clean db or careful insertion
         
-        tenant_id = generate_id()
+        # ID 会自动通过 BaseModel 的雪花算法生成，无需手动设置
         tenant = Tenant(
-            id=tenant_id,
             name="Default Tenant",
             code="default",
             status=1
         )
         session.add(tenant)
+        await session.flush()  # 刷新以获取自动生成的 ID
+        tenant_id = tenant.id
         
         print("Creating super admin user...")
         # Create admin

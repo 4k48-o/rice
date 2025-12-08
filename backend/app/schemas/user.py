@@ -17,7 +17,7 @@ class UserBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=20, description="手机号")
     real_name: Optional[str] = Field(None, max_length=50, description="真实姓名")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
-    dept_id: Optional[int] = Field(None, description="部门ID")
+    dept_id: Optional[str] = Field(None, description="部门ID")
     position: Optional[str] = Field(None, max_length=50, description="职位")
     gender: Optional[int] = Field(0, description="性别:0未知,1男,2女")
     status: Optional[int] = Field(1, description="状态:0禁用,1正常")
@@ -27,7 +27,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """User creation schema."""
     password: str = Field(..., description="密码")
-    role_ids: Optional[List[int]] = Field(None, description="角色ID列表")
+    role_ids: Optional[List[str]] = Field(None, description="角色ID列表")
 
     @field_validator("password")
     @classmethod
@@ -43,23 +43,24 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     real_name: Optional[str] = None
     nickname: Optional[str] = None
-    dept_id: Optional[int] = None
+    dept_id: Optional[str] = None
     position: Optional[str] = None
     gender: Optional[int] = None
     status: Optional[int] = None
     remark: Optional[str] = None
-    role_ids: Optional[List[int]] = None
+    role_ids: Optional[List[str]] = None
 
 
 class UserResponse(UserBase):
     """User response schema."""
-    id: int
+    id: str
     user_type: int
     avatar: Optional[str]
     created_at: datetime
     last_login_time: Optional[datetime]
-    role_ids: Optional[List[int]] = Field(default_factory=list, description="角色ID列表")
+    role_ids: Optional[List[str]] = Field(default_factory=list, description="角色ID列表")
     roles: Optional[List[dict]] = Field(default_factory=list, description="角色详细信息")
+    dept_name: Optional[str] = Field(None, description="部门名称")
 
     class Config:
         from_attributes = True

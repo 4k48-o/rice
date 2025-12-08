@@ -53,7 +53,7 @@ class OperationLogMiddleware(BaseHTTPMiddleware):
             # We assume user_id and username are available in context or request state
             user_id = None
             username = None
-            tenant_id = get_current_tenant_id() or 0
+            tenant_id = get_current_tenant_id() or "0"
             
             # Try to get from request state (set by deps)
             # Note: User object may be detached from session after request completes
@@ -64,13 +64,17 @@ class OperationLogMiddleware(BaseHTTPMiddleware):
                     # Try to access id directly (should be cached)
                     user_id = getattr(user, 'id', None)
                     username = getattr(user, 'username', None)
-                    tenant_id = getattr(user, 'tenant_id', None)
+                    tenant_id_raw = getattr(user, 'tenant_id', None)
+                    # Ensure tenant_id is string
+                    tenant_id = str(tenant_id_raw) if tenant_id_raw is not None else "0"
                 except Exception:
                     # If user object is detached, try to get from state directly
                     # Some deps may store user info separately
                     user_id = getattr(request.state, 'user_id', None)
                     username = getattr(request.state, 'username', None)
-                    tenant_id = getattr(request.state, 'tenant_id', None)
+                    tenant_id_raw = getattr(request.state, 'tenant_id', None)
+                    # Ensure tenant_id is string
+                    tenant_id = str(tenant_id_raw) if tenant_id_raw is not None else "0"
                 
             # Get custom log info from request state (set by decorator)
             module = getattr(request.state, "log_module", None)
@@ -95,7 +99,7 @@ class OperationLogMiddleware(BaseHTTPMiddleware):
                     summary=summary,
                     params=params, 
                     error_msg=error_msg,
-                    tenant_id=tenant_id or 0
+                    tenant_id=tenant_id or "0"
                 )
 
                 # Define async wrapper to ensure coroutine is awaited

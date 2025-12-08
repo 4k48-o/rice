@@ -13,7 +13,7 @@ class PermissionService:
     """Permission service."""
     
     @staticmethod
-    async def get_permissions(db: AsyncSession, tenant_id: int) -> List[Permission]:
+    async def get_permissions(db: AsyncSession, tenant_id: str) -> List[Permission]:
         """
         Get all permissions for a tenant.
         
@@ -66,7 +66,7 @@ class PermissionService:
     async def create_permission(
         db: AsyncSession,
         perm_data: PermissionCreate,
-        tenant_id: int
+        tenant_id: str
     ) -> Permission:
         """Create a new permission."""
         perm = Permission(
@@ -81,7 +81,7 @@ class PermissionService:
     @staticmethod
     async def update_permission(
         db: AsyncSession,
-        perm_id: int,
+        perm_id: str,
         perm_data: PermissionUpdate
     ) -> Optional[Permission]:
         """Update a permission."""

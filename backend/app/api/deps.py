@@ -42,7 +42,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user_id: Optional[int] = payload.get("sub")
+    user_id: Optional[str] = payload.get("sub")
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -50,15 +50,7 @@ async def get_current_user(
         )
     
     # Query user from database
-    try:
-        user_id_int = int(user_id)
-    except (ValueError, TypeError):
-         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid user ID in token",
-        )
-        
-    user = await db.get(User, user_id_int)
+    user = await db.get(User, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

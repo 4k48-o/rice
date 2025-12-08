@@ -34,13 +34,13 @@ class RefreshTokenRequest(BaseModel):
 class UserInfo(BaseModel):
     """User info schema."""
     
-    id: int
+    id: str
     username: str
     real_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     avatar: Optional[str] = None
-    dept_id: Optional[int] = None
+    dept_id: Optional[str] = None
     dept_name: Optional[str] = None
     roles: List[dict] = Field(default_factory=list)
     permissions: List[str] = Field(default_factory=list)

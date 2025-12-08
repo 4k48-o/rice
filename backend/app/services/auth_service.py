@@ -84,7 +84,7 @@ class AuthService:
         return await AuthService.create_tokens(db, user.id)
 
     @staticmethod
-    async def create_tokens(db: AsyncSession, user_id: int) -> TokenResponse:
+    async def create_tokens(db: AsyncSession, user_id: str) -> TokenResponse:
         """Create access and refresh tokens for user."""
         user = await user_service.get_by_id(db, user_id)
         if not user:
@@ -174,15 +174,8 @@ class AuthService:
             )
             
         # Verify user still exists and valid
-        # user_id from token is str, but models usually use int. 
-        # But wait, User.id is BigInteger (int).
-        # We need to cast it.
-        try:
-             user_id_int = int(user_id)
-        except ValueError:
-             raise HTTPException(status_code=401, detail="Invalid user id")
-
-        user = await user_service.get_by_id(db, user_id_int)
+        # user_id is now a string
+        user = await user_service.get_by_id(db, user_id)
         if not user or user.status != 1:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

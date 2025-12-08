@@ -2,8 +2,7 @@
 Role schemas for request/response.
 """
 from typing import Optional, List
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, field_validator
 
 class RoleBase(BaseModel):
     """Base role schema."""
@@ -11,12 +10,12 @@ class RoleBase(BaseModel):
     code: str = Field(..., description="角色编码")
     sort: int = Field(0, description="排序")
     status: int = Field(1, description="状态:0禁用,1正常")
-    data_scope: int = Field(1, description="数据权限:1全部,2本部门及以下,3本部门,4仅本人")
+    data_scope: int = Field(1, description="数据权限:1全部,2本部门及以下,3本部门,4仅本人,5自定义")
 
 
 class RoleCreate(RoleBase):
     """Schema for creating role."""
-    permission_ids: List[int] = Field(default_factory=list, description="权限ID列表")
+    permission_ids: List[str] = Field(default_factory=list, description="权限ID列表")
 
 
 class RoleUpdate(BaseModel):
@@ -26,13 +25,13 @@ class RoleUpdate(BaseModel):
     sort: Optional[int] = None
     status: Optional[int] = None
     data_scope: Optional[int] = None
-    permission_ids: Optional[List[int]] = None
+    permission_ids: Optional[List[str]] = None
 
 
 class RoleResponse(RoleBase):
     """Schema for role response."""
-    id: int
-    tenant_id: int
+    id: str
+    tenant_id: str
     
     class Config:
         from_attributes = True

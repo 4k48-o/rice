@@ -26,7 +26,7 @@ async def get_users(
     username: str = None,
     phone: str = None,
     status: int = None,
-    dept_id: int = None,
+    dept_id: str = None,
     current_user: User = Depends(deps.require_permissions("user:list")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -63,7 +63,7 @@ async def get_users(
 
 @router.get("/{user_id}", response_model=Response)
 async def get_user(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(deps.require_permissions("user:detail")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -92,7 +92,8 @@ async def get_user(
     
     # Get user roles
     roles = await user_service.get_user_roles(db, user_id)
-    user_dict = UserResponse.model_validate(user).model_dump()
+    user_dict = UserResponse.model_validate(user).model_dump(mode='json')
+    
     user_dict["role_ids"] = [role.id for role in roles]
     user_dict["roles"] = [{"id": role.id, "name": role.name, "code": role.code} for role in roles]
     
@@ -106,7 +107,7 @@ async def get_user(
 
 @router.get("/{user_id}/roles", response_model=Response)
 async def get_user_roles(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(deps.require_permissions("user:detail")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -178,7 +179,7 @@ async def create_user(
 
 @router.put("/{user_id}", response_model=Response)
 async def update_user(
-    user_id: int,
+    user_id: str,
     user_in: UserUpdate,
     current_user: User = Depends(deps.require_permissions("user:update")),
     db: AsyncSession = Depends(get_db),
@@ -234,7 +235,7 @@ async def update_user(
 
 @router.post("/{user_id}/reset-password", response_model=Response)
 async def reset_password(
-    user_id: int,
+    user_id: str,
     password_in: dict, # { "password": "new_password" }
     current_user: User = Depends(deps.require_permissions("user:reset-password")),
     db: AsyncSession = Depends(get_db),
@@ -243,7 +244,6 @@ async def reset_password(
     Reset user password (Admin).
     Requires permission: user:reset-password
     """
-    
     new_password = password_in.get("password")
     if not new_password or len(new_password) < 6:
          return {
@@ -273,7 +273,7 @@ async def reset_password(
 
 @router.delete("/{user_id}", response_model=Response)
 async def delete_user(
-    user_id: int,
+    user_id: str,
     current_user: User = Depends(deps.require_permissions("user:delete")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -281,7 +281,6 @@ async def delete_user(
     Delete user.
     Requires permission: user:delete
     """
-    
     success = await user_service.delete_user(db, user_id)
     
     if not success:

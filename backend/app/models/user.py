@@ -4,7 +4,7 @@ User model.
 from typing import Optional, List
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, Integer, SmallInteger, String, DateTime
+from sqlalchemy import Boolean, Integer, SmallInteger, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel, TenantMixin
@@ -60,8 +60,8 @@ class User(BaseModel, TenantMixin):
         server_default="1",
         comment="用户类型:0超级管理员,1租户管理员,2普通用户"
     )
-    dept_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    dept_id: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         index=True,
         comment="部门ID"

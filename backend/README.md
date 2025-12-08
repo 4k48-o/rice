@@ -255,10 +255,15 @@ gunicorn app.main:app \
 
 ## 相关文档
 
-- [API接口文档](../API_DESIGN.md)
-- [数据库设计文档](../DATABASE_DESIGN.md)
-- [架构设计文档](../DETAILED_ARCHITECTURE_DESIGN.md)
-- [开发计划](./DEVELOPMENT_PLAN.md)
+- [API接口文档](./docs/API_DOCUMENTATION.md)
+- [API测试示例](./docs/API_CURL_TEST.md)
+- [数据库设计文档](./docs/DATABASE_DESIGN.md) - 完整的数据库设计和表结构
+- [开发计划](./docs/DEVELOPMENT_PLAN.md)
+- [测试计划](./docs/TEST_PLAN.md)
+- [开发指南](./docs/DEVELOPMENT_GUIDE.md)
+- [最佳实践](./docs/BEST_PRACTICES.md)
+- [快速参考](./docs/QUICK_REFERENCE.md)
+- [ID生成策略](./docs/ID_GENERATION_STRATEGY.md)
 
 ## 许可证
 

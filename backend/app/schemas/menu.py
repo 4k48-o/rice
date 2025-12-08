@@ -2,14 +2,13 @@
 Menu schemas for request/response.
 """
 from typing import Optional, List
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, field_validator
 
 class MenuBase(BaseModel):
     """Base menu schema."""
     name: str = Field(..., description="菜单名称")
     title: str = Field(..., description="菜单标题")
-    parent_id: Optional[int] = Field(None, description="父菜单ID")
+    parent_id: Optional[str] = Field(None, description="父菜单ID")
     path: Optional[str] = Field(None, description="路由路径")
     component: Optional[str] = Field(None, description="组件路径")
     redirect: Optional[str] = Field(None, description="重定向路径")
@@ -32,7 +31,7 @@ class MenuUpdate(BaseModel):
     """Schema for updating menu."""
     name: Optional[str] = None
     title: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     path: Optional[str] = None
     component: Optional[str] = None
     redirect: Optional[str] = None
@@ -48,8 +47,8 @@ class MenuUpdate(BaseModel):
 
 class MenuResponse(MenuBase):
     """Schema for menu response."""
-    id: int
-    tenant_id: int
+    id: str
+    tenant_id: str
     
     class Config:
         from_attributes = True

@@ -19,12 +19,12 @@ class LogService:
     @staticmethod
     async def create_login_log(
         username: str,
-        status: int,
+        status: str,
         ip: str,
-        user_id: Optional[int] = None,
+        user_id: Optional[str] = None,
         msg: Optional[str] = None,
         user_agent: str = None,
-        tenant_id: int = 0
+        tenant_id: str = "0"
     ) -> None:
         """
         Create login log asynchronously.
@@ -85,15 +85,15 @@ class LogService:
         url: str,
         ip: str,
         user_agent: str,
-        status: int,
-        duration: int,
-        user_id: Optional[int] = None,
+        status: str,
+        duration: str,
+        user_id: Optional[str] = None,
         module: Optional[str] = None,
         summary: Optional[str] = None,
         params: Optional[dict] = None,
         result: Optional[dict] = None,
         error_msg: Optional[str] = None,
-        tenant_id: int = 0
+        tenant_id: str = "0"
     ) -> None:
         """
         Create operation log asynchronously.
@@ -127,14 +127,14 @@ class LogService:
     @staticmethod
     async def get_login_logs(
         db: AsyncSession,
-        page: int = 1,
-        page_size: int = 20,
+        page: str = 1,
+        page_size: str = 20,
         username: Optional[str] = None,
-        status: Optional[int] = None,
+        status: Optional[str] = None,
         ip: Optional[str] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-        tenant_id: Optional[int] = None
+        tenant_id: Optional[str] = None
     ) -> Tuple[List[LoginLog], int]:
         """
         Get login logs with filters.
@@ -191,15 +191,15 @@ class LogService:
     @staticmethod
     async def get_operation_logs(
         db: AsyncSession,
-        page: int = 1,
-        page_size: int = 20,
+        page: str = 1,
+        page_size: str = 20,
         username: Optional[str] = None,
         module: Optional[str] = None,
-        status: Optional[int] = None,
+        status: Optional[str] = None,
         method: Optional[str] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-        tenant_id: Optional[int] = None
+        tenant_id: Optional[str] = None
     ) -> Tuple[List[OperationLog], int]:
         """
         Get operation logs with filters.
@@ -260,7 +260,7 @@ class LogService:
     @staticmethod
     async def get_online_users(
         db: AsyncSession,
-        tenant_id: Optional[int] = None
+        tenant_id: Optional[str] = None
     ) -> List[dict]:
         """
         Get online users from Redis.
@@ -289,7 +289,7 @@ class LogService:
         user_ids = []
         for key in keys:
             try:
-                user_id = int(key.decode().split(":")[1])
+                user_id = key.decode().split(":")[1]  # ID is now a string
                 user_ids.append(user_id)
             except (ValueError, IndexError):
                 continue

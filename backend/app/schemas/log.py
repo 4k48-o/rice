@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field
 class LoginLogResponse(BaseModel):
     """Login log response schema."""
     
-    id: int
-    user_id: Optional[int] = None
+    id: str
+    user_id: Optional[str] = None
     username: str
     status: int = Field(description="状态:1成功,0失败")
     ip: Optional[str] = None
@@ -28,8 +28,8 @@ class LoginLogResponse(BaseModel):
 class OperationLogResponse(BaseModel):
     """Operation log response schema."""
     
-    id: int
-    user_id: Optional[int] = None
+    id: str
+    user_id: Optional[str] = None
     username: Optional[str] = None
     module: Optional[str] = None
     summary: Optional[str] = None
@@ -52,7 +52,7 @@ class OperationLogResponse(BaseModel):
 class OnlineUserResponse(BaseModel):
     """Online user response schema."""
     
-    user_id: int
+    user_id: str
     username: str
     real_name: Optional[str] = None
     ip: Optional[str] = None

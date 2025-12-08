@@ -68,7 +68,7 @@ async def get_department_tree(
 @router.get("/{dept_id}", response_model=dict)
 @require_permissions("dept:query")
 async def get_department(
-    dept_id: str,  # Receive as string to avoid precision loss, convert to int in service
+    dept_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -77,21 +77,12 @@ async def get_department(
     
     Requires permission: dept:query
     """
-    # Convert string ID to int (BigInteger) to avoid JavaScript precision loss
-    try:
-        dept_id_int = int(dept_id)
-    except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid department ID format"
-        )
-    
     # Debug: Log the request
     import logging
     logger = logging.getLogger(__name__)
-    logger.info(f"Getting department: dept_id={dept_id} (converted to {dept_id_int}), tenant_id={current_user.tenant_id}")
+    logger.info(f"Getting department: dept_id={dept_id}, tenant_id={current_user.tenant_id}")
     
-    department = await department_service.get_department_by_id(db, dept_id_int, current_user.tenant_id)
+    department = await department_service.get_department_by_id(db, dept_id, current_user.tenant_id)
     
     if not department:
         logger.warning(f"Department not found: dept_id={dept_id}, tenant_id={current_user.tenant_id}")
@@ -142,7 +133,7 @@ async def create_department(
 @router.put("/{dept_id}", response_model=dict)
 @require_permissions("dept:update")
 async def update_department(
-    dept_id: str,  # Receive as string to avoid precision loss, convert to int in service
+    dept_id: str,
     dept_data: DepartmentUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -153,21 +144,12 @@ async def update_department(
     Requires permission: dept:update
     """
     try:
-        # Convert string ID to int (BigInteger) to avoid JavaScript precision loss
-        try:
-            dept_id_int = int(dept_id)
-        except (ValueError, TypeError):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid department ID format"
-            )
-        
         # Debug: Log the request
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Updating department: dept_id={dept_id} (converted to {dept_id_int}), tenant_id={current_user.tenant_id}")
+        logger.info(f"Updating department: dept_id={dept_id}, tenant_id={current_user.tenant_id}")
         
-        department = await department_service.update_department(db, dept_id_int, dept_data, current_user.tenant_id)
+        department = await department_service.update_department(db, dept_id, dept_data, current_user.tenant_id)
         
         if not department:
             logger.warning(f"Department not found: dept_id={dept_id}, tenant_id={current_user.tenant_id}")
@@ -194,7 +176,7 @@ async def update_department(
 @router.delete("/{dept_id}", response_model=dict)
 @require_permissions("dept:delete")
 async def delete_department(
-    dept_id: str,  # Receive as string to avoid precision loss, convert to int in service
+    dept_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -204,16 +186,7 @@ async def delete_department(
     Requires permission: dept:delete
     """
     try:
-        # Convert string ID to int (BigInteger) to avoid JavaScript precision loss
-        try:
-            dept_id_int = int(dept_id)
-        except (ValueError, TypeError):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid department ID format"
-            )
-        
-        success = await department_service.delete_department(db, dept_id_int, current_user.tenant_id)
+        success = await department_service.delete_department(db, dept_id, current_user.tenant_id)
         
         if not success:
             raise HTTPException(

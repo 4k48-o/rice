@@ -4,7 +4,7 @@ Log models.
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, SmallInteger, Text, DateTime, JSON, BigInteger
+from sqlalchemy import String, SmallInteger, Text, DateTime, JSON, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseModel, TenantMixin
@@ -16,8 +16,8 @@ class LoginLog(BaseModel, TenantMixin):
     __tablename__ = "sys_login_log"
     __table_args__ = {"comment": "登录日志表"}
     
-    user_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    user_id: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         comment="用户ID"
     )
@@ -71,8 +71,8 @@ class OperationLog(BaseModel, TenantMixin):
     __tablename__ = "sys_opt_log"
     __table_args__ = {"comment": "操作日志表"}
     
-    user_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    user_id: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         comment="用户ID"
     )
@@ -137,6 +137,8 @@ class OperationLog(BaseModel, TenantMixin):
         nullable=True,
         comment="错误消息"
     )
-    duration: Mapped[int] = mapped_column(
+    duration: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
         comment="耗时(ms)"
     )

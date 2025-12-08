@@ -4,23 +4,23 @@ Tenant model.
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, Integer, SmallInteger, String, DateTime
+from sqlalchemy import Integer, SmallInteger, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, SoftDeleteMixin
+from app.models.base import BaseModel
 
 
-class Tenant(Base, TimestampMixin, SoftDeleteMixin):
-    """Tenant model."""
+class Tenant(BaseModel):
+    """Tenant model.
+    
+    注意：Tenant 不继承 TenantMixin，因为它本身就是租户实体。
+    ID 通过 BaseModel 自动使用雪花算法生成。
+    """
     
     __tablename__ = "tenants"
     __table_args__ = {"comment": "租户表"}
     
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        primary_key=True,
-        comment="主键ID"
-    )
+    # id 字段继承自 BaseModel，使用雪花算法自动生成
     name: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -60,8 +60,8 @@ class Tenant(Base, TimestampMixin, SoftDeleteMixin):
         nullable=True,
         comment="过期时间"
     )
-    package_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger,
+    package_id: Mapped[Optional[str]] = mapped_column(
+        String(50),
         nullable=True,
         comment="套餐ID"
     )

@@ -36,7 +36,7 @@ class MenuService:
         cached_menu_ids = await redis.get(cache_key)
         if cached_menu_ids:
             # Parse cached menu IDs
-            menu_ids = [int(id_str) for id_str in cached_menu_ids.split(",")]
+            menu_ids = cached_menu_ids.split(",")  # IDs are now strings
             stmt = select(Menu).where(
                 Menu.id.in_(menu_ids),
                 Menu.is_deleted == False
@@ -145,7 +145,7 @@ class MenuService:
         return root_menus
     
     @staticmethod
-    async def create_menu(db: AsyncSession, menu_data: MenuCreate, tenant_id: int) -> Menu:
+    async def create_menu(db: AsyncSession, menu_data: MenuCreate, tenant_id: str) -> Menu:
         """Create a new menu."""
         # Validate parent menu
         if not await MenuService.validate_parent_menu(db, menu_data.parent_id, tenant_id):
@@ -165,7 +165,7 @@ class MenuService:
         return menu
     
     @staticmethod
-    async def update_menu(db: AsyncSession, menu_id: int, menu_data: MenuUpdate) -> Optional[Menu]:
+    async def update_menu(db: AsyncSession, menu_id: str, menu_data: MenuUpdate) -> Optional[Menu]:
         """Update a menu."""
         stmt = select(Menu).where(Menu.id == menu_id, Menu.is_deleted == False)
         result = await db.execute(stmt)
@@ -202,7 +202,7 @@ class MenuService:
         return menu
     
     @staticmethod
-    async def delete_menu(db: AsyncSession, menu_id: int) -> bool:
+    async def delete_menu(db: AsyncSession, menu_id: str) -> bool:
         """Soft delete a menu."""
         stmt = select(Menu).where(Menu.id == menu_id, Menu.is_deleted == False)
         result = await db.execute(stmt)
@@ -222,12 +222,12 @@ class MenuService:
     @staticmethod
     async def get_all_menus(
         db: AsyncSession,
-        tenant_id: int,
-        page: int = 1,
-        page_size: int = 20,
+        tenant_id: str,
+        page: str = 1,
+        page_size: str = 20,
         keyword: Optional[str] = None,
-        menu_type: Optional[int] = None,
-        status: Optional[int] = None
+        menu_type: Optional[str] = None,
+        status: Optional[str] = None
     ) -> tuple[List[Menu], int]:
         """
         Get all menus with pagination and filters.
@@ -265,14 +265,14 @@ class MenuService:
         return menus, total
     
     @staticmethod
-    async def get_menu_by_id(db: AsyncSession, menu_id: int) -> Optional[Menu]:
+    async def get_menu_by_id(db: AsyncSession, menu_id: str) -> Optional[Menu]:
         """Get a single menu by ID."""
         stmt = select(Menu).where(Menu.id == menu_id, Menu.is_deleted == False)
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
     
     @staticmethod
-    async def get_all_menus_tree(db: AsyncSession, tenant_id: int) -> List[MenuTreeNode]:
+    async def get_all_menus_tree(db: AsyncSession, tenant_id: str) -> List[MenuTreeNode]:
         """
         Get complete menu tree (without permission filtering).
         For admin use only.
@@ -288,7 +288,7 @@ class MenuService:
         return MenuService.build_menu_tree(menus)
     
     @staticmethod
-    async def validate_parent_menu(db: AsyncSession, parent_id: Optional[int], tenant_id: int) -> bool:
+    async def validate_parent_menu(db: AsyncSession, parent_id: Optional[int], tenant_id: str) -> bool:
         """
         Validate that parent menu exists.
         
@@ -311,7 +311,7 @@ class MenuService:
     @staticmethod
     async def check_circular_reference(
         db: AsyncSession,
-        menu_id: int,
+        menu_id: str,
         new_parent_id: Optional[int]
     ) -> bool:
         """

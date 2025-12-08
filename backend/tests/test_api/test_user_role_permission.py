@@ -155,6 +155,7 @@ class TestRoleService:
         from app.schemas.role import RoleCreate
         
         # Create test permissions
+        # ID 会自动通过 BaseModel 的雪花算法生成，无需手动设置
         perm1 = Permission(
             name="用户列表",
             code="user:list",
@@ -169,7 +170,7 @@ class TestRoleService:
         )
         db_session.add(perm1)
         db_session.add(perm2)
-        await db_session.flush()
+        await db_session.flush()  # 刷新以获取自动生成的 ID
         
         # Create role with permissions
         role_data = RoleCreate(

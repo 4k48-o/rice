@@ -7,11 +7,12 @@ import { Drawer, Form, Input, Select, message, Button, Row, Col } from 'antd';
 const { TextArea } = Input;
 import { User, UserCreate, UserUpdate } from '@/types/user';
 import { createUser, updateUser } from '@/api/user';
-import { getDepartmentTree } from '@/api/department';
-import { Department } from '@/types/department';
 import { useTranslation } from 'react-i18next';
 import { Permission } from '@/components/Permission/Permission';
 import { debounce } from '@/utils/debounce';
+// toIdString removed - IDs are now strings
+import { normalizeFormData } from '@/utils/formData';
+import { DepartmentSelect } from '@/components/DepartmentSelect';
 
 interface UserFormProps {
   visible: boolean;
@@ -23,13 +24,11 @@ interface UserFormProps {
 export default function UserForm({ visible, user, onCancel, onSuccess }: UserFormProps) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const handleSubmitRef = useRef<() => Promise<void>>();
 
   useEffect(() => {
     if (visible) {
-      loadDepartments();
       if (user) {
         form.setFieldsValue(user);
       } else {
@@ -37,15 +36,6 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
       }
     }
   }, [visible, user, form]);
-
-  const loadDepartments = async () => {
-    try {
-      const response = await getDepartmentTree();
-      setDepartments(response.data);
-    } catch (error) {
-      console.error('Failed to load departments:', error);
-    }
-  };
 
   // 更新提交函数引用
   useEffect(() => {
@@ -56,11 +46,16 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
         const values = await form.validateFields();
         setSubmitting(true);
         
+        // 统一处理表单数据中的ID字段：将string类型的ID转换为number
+        // 这样确保后端能正确接收和处理（后端Schema期望int类型）
+        const normalizedValues = normalizeFormData(values);
+        
         if (user) {
-          await updateUser(user.id, values as UserUpdate);
+          // 使用公共方法转换 ID，避免 JavaScript 精度丢失
+          await updateUser(user.id, normalizedValues as UserUpdate);
           message.success(t('common.updateSuccess'));
         } else {
-          await createUser(values as UserCreate);
+          await createUser(normalizedValues as UserCreate);
           message.success(t('common.createSuccess'));
         }
         setSubmitting(false);
@@ -85,24 +80,6 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
     }, 300)
   ).current;
 
-  // 递归构建部门选项
-  const buildDepartmentOptions = (depts: Department[]): any[] => {
-    const options: any[] = [];
-    depts.forEach((dept) => {
-      const deptName = dept.name || dept.dept_name || `部门-${dept.id}`;
-      const option: any = {
-        value: dept.id,
-        label: deptName,
-      };
-      if (dept.children && dept.children.length > 0) {
-        option.children = buildDepartmentOptions(dept.children);
-      }
-      options.push(option);
-    });
-    return options;
-  };
-
-  const departmentOptions = buildDepartmentOptions(departments);
 
   return (
     <Drawer
@@ -182,13 +159,9 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="dept_id" label={t('user.department')}>
-              <Select
+              <DepartmentSelect
                 placeholder={t('common.pleaseSelect', { field: t('user.department') })}
-                options={departmentOptions}
-                showSearch
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
+                onlyEnabled={true}
               />
             </Form.Item>
           </Col>

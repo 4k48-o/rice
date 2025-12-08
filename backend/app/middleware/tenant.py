@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Context variable to store current tenant_id
-current_tenant_id: ContextVar[Optional[int]] = ContextVar("current_tenant_id", default=None)
+current_tenant_id: ContextVar[Optional[str]] = ContextVar("current_tenant_id", default=None)
 
 
 class TenantMiddleware(BaseHTTPMiddleware):
@@ -41,11 +41,11 @@ class TenantMiddleware(BaseHTTPMiddleware):
             current_tenant_id.reset(token)
 
 
-def get_current_tenant_id() -> Optional[int]:
+def get_current_tenant_id() -> Optional[str]:
     """Get current tenant ID from context."""
     return current_tenant_id.get()
 
 
-def set_current_tenant_id(tenant_id: int) -> None:
+def set_current_tenant_id(tenant_id: str) -> None:
     """Set current tenant ID in context."""
     current_tenant_id.set(tenant_id)

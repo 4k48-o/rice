@@ -7,6 +7,8 @@ import { Department, DepartmentCreate, DepartmentUpdate } from '@/types/departme
 import { createDepartment, updateDepartment, getDepartmentTree } from '@/api/department';
 import { useTranslation } from 'react-i18next';
 import { debounce } from '@/utils/debounce';
+// toIdString removed - IDs are now strings
+import { normalizeFormData } from '@/utils/formData';
 
 interface DepartmentFormProps {
   visible: boolean;
@@ -69,20 +71,28 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
         const values = await form.validateFields();
         setSubmitting(true);
         
+        // 映射前端字段名到后端字段名
+        const mappedValues: any = {
+          code: values.dept_code,
+          name: values.dept_name,
+          parent_id: values.parent_id,
+          leader_id: values.leader_id,
+          phone: values.phone,
+          email: values.email,
+          sort: values.sort_order,
+          status: values.status,
+          remark: values.remark,
+        };
+        
+        // 统一处理表单数据中的ID字段：将string类型的ID转换为number
+        const normalizedValues = normalizeFormData(mappedValues);
+        
         if (department) {
-          // 保持 ID 为字符串类型，避免 JavaScript 精度丢失
-          // 后端会接收字符串并转换为 BigInteger
-          const deptId = String(department.id);
-          if (!deptId) {
-            console.error('Invalid department ID:', department.id, 'type:', typeof department.id);
-            message.error(t('common.invalidId') || '无效的部门ID');
-            return;
-          }
-          console.log('Updating department:', { id: deptId, originalId: department.id, department, values });
-          await updateDepartment(deptId as any, values as DepartmentUpdate);
+          // 使用公共方法转换 ID，避免 JavaScript 精度丢失
+          await updateDepartment(department.id, normalizedValues as DepartmentUpdate);
           message.success(t('common.updateSuccess'));
         } else {
-          await createDepartment(values as DepartmentCreate);
+          await createDepartment(mappedValues as DepartmentCreate);
           message.success(t('common.createSuccess'));
         }
         setSubmitting(false);

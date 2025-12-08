@@ -2,15 +2,14 @@
 Permission schemas for request/response.
 """
 from typing import Optional, List
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, field_validator
 
 class PermissionBase(BaseModel):
     """Base permission schema."""
     name: str = Field(..., description="权限名称")
     code: str = Field(..., description="权限标识,如user:list")
-    type: int = Field(1, description="类型:1菜单,2按钮,3API")
-    parent_id: Optional[int] = Field(None, description="父权限ID")
+    type: int = Field(1, description="类型:1目录,2菜单,3按钮")
+    parent_id: Optional[str] = Field(None, description="父权限ID")
     sort: int = Field(0, description="排序")
     status: int = Field(1, description="状态:0禁用,1启用")
 
@@ -25,15 +24,15 @@ class PermissionUpdate(BaseModel):
     name: Optional[str] = None
     code: Optional[str] = None
     type: Optional[int] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     sort: Optional[int] = None
     status: Optional[int] = None
 
 
 class PermissionResponse(PermissionBase):
     """Schema for permission response."""
-    id: int
-    tenant_id: int
+    id: str
+    tenant_id: str
     
     class Config:
         from_attributes = True

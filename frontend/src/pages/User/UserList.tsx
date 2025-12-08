@@ -6,12 +6,12 @@ import { Table, Button, Space, Input, Select, DatePicker, message, Popconfirm, S
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { getUserList, deleteUser } from '@/api/user';
-import { getDepartmentTree } from '@/api/department';
 import { User, UserListParams } from '@/types/user';
-import { Department } from '@/types/department';
 import { formatDateTime, formatStatus, formatUserType } from '@/utils/format';
 import { Permission } from '@/components/Permission/Permission';
 import { QueryForm } from '@/components/QueryForm';
+// toIdString removed - IDs are now strings
+import { DepartmentSelect } from '@/components/DepartmentSelect';
 import UserForm from './UserForm';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -28,36 +28,7 @@ export default function UserList() {
   const [searchParams, setSearchParams] = useState<UserListParams>({});
   const [formVisible, setFormVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [lastLoginRange, setLastLoginRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
-
-  // 加载部门树
-  const loadDepartments = async () => {
-    try {
-      const response = await getDepartmentTree();
-      setDepartments(response.data || []);
-    } catch (error) {
-      console.error('Failed to load departments:', error);
-    }
-  };
-
-  // 递归构建部门选项
-  const buildDepartmentOptions = (depts: Department[]): any[] => {
-    const options: any[] = [];
-    depts.forEach((dept) => {
-      // 后端返回的字段是 name，兼容处理 dept_name
-      const deptName = dept.name || dept.dept_name || `部门-${dept.id}`;
-      options.push({
-        value: dept.id,
-        label: deptName,
-      });
-      if (dept.children && dept.children.length > 0) {
-        const childOptions = buildDepartmentOptions(dept.children);
-        options.push(...childOptions);
-      }
-    });
-    return options;
-  };
 
   const loadUsers = async () => {
     setLoading(true);
@@ -84,9 +55,6 @@ export default function UserList() {
     }
   };
 
-  useEffect(() => {
-    loadDepartments();
-  }, []);
 
   useEffect(() => {
     loadUsers();
@@ -104,8 +72,9 @@ export default function UserList() {
     setPage(1);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number | string) => {
     try {
+      // 使用公共方法转换 ID，避免 JavaScript 精度丢失
       await deleteUser(id);
       message.success(t('common.deleteSuccess'));
       loadUsers();
@@ -262,12 +231,9 @@ export default function UserList() {
           <Col xs={24} sm={12} md={8} lg={6}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ minWidth: 80, flexShrink: 0 }}>{t('user.department')}:</span>
-              <Select
+              <DepartmentSelect
                 placeholder={t('user.department')}
                 style={{ flex: 1, width: '100%' }}
-                allowClear
-                showSearch
-                optionFilterProp="label"
                 value={searchParams.dept_id}
                 onChange={(value) => {
                   if (value !== undefined) {
@@ -278,7 +244,7 @@ export default function UserList() {
                   }
                   setPage(1);
                 }}
-                options={buildDepartmentOptions(departments)}
+                onlyEnabled={true}
               />
             </div>
           </Col>

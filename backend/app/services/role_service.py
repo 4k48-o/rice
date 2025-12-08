@@ -16,7 +16,7 @@ class RoleService:
     """Role service."""
     
     @staticmethod
-    async def get_roles(db: AsyncSession, tenant_id: int) -> List[Role]:
+    async def get_roles(db: AsyncSession, tenant_id: str) -> List[Role]:
         """
         Get all roles for a tenant.
         
@@ -36,7 +36,7 @@ class RoleService:
         return list(result.scalars().all())
     
     @staticmethod
-    async def get_role_by_id(db: AsyncSession, role_id: int) -> Optional[Role]:
+    async def get_role_by_id(db: AsyncSession, role_id: str) -> Optional[Role]:
         """Get role by ID."""
         stmt = select(Role).where(
             Role.id == role_id,
@@ -46,7 +46,7 @@ class RoleService:
         return result.scalar_one_or_none()
     
     @staticmethod
-    async def get_role_permissions(db: AsyncSession, role_id: int) -> List[Permission]:
+    async def get_role_permissions(db: AsyncSession, role_id: str) -> List[Permission]:
         """
         Get all permissions for a role.
         
@@ -71,7 +71,7 @@ class RoleService:
     async def create_role(
         db: AsyncSession,
         role_data: RoleCreate,
-        tenant_id: int
+        tenant_id: str
     ) -> Role:
         """Create a new role with permissions."""
         # Extract permission_ids
@@ -93,7 +93,7 @@ class RoleService:
     @staticmethod
     async def update_role(
         db: AsyncSession,
-        role_id: int,
+        role_id: str,
         role_data: RoleUpdate
     ) -> Optional[Role]:
         """Update a role and its permissions."""
@@ -125,7 +125,7 @@ class RoleService:
         return role
     
     @staticmethod
-    async def delete_role(db: AsyncSession, role_id: int) -> bool:
+    async def delete_role(db: AsyncSession, role_id: str) -> bool:
         """
         Soft delete a role.
         
@@ -148,7 +148,7 @@ class RoleService:
     @staticmethod
     async def _assign_permissions(
         db: AsyncSession,
-        role_id: int,
+        role_id: str,
         permission_ids: List[int]
     ) -> None:
         """

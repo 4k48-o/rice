@@ -9,6 +9,7 @@ import { getDepartmentTree, deleteDepartment } from '@/api/department';
 import { Department } from '@/types/department';
 import { Permission } from '@/components/Permission/Permission';
 import { QueryForm } from '@/components/QueryForm';
+// toIdString removed - IDs are now strings
 import DepartmentForm from './DepartmentForm';
 import type { DataNode } from 'antd/es/tree';
 import type { ColumnsType } from 'antd/es/table';
@@ -123,15 +124,8 @@ export default function DepartmentList() {
 
   const handleDelete = async (id: number | string) => {
     try {
-      // 保持 ID 为字符串类型，避免 JavaScript 精度丢失
-      // 后端会接收字符串并转换为 BigInteger
-      const deptId = String(id);
-      if (!deptId) {
-        console.error('Invalid department ID for delete:', id);
-        message.error(t('common.invalidId') || '无效的部门ID');
-        return;
-      }
-      await deleteDepartment(deptId);
+      // 使用公共方法转换 ID，避免 JavaScript 精度丢失
+      await deleteDepartment(id);
       message.success(t('common.deleteSuccess'));
       loadDepartments();
     } catch (error: any) {

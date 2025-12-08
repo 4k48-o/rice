@@ -3,27 +3,26 @@ Permission model (Menu/Button).
 """
 from typing import Optional
 
-from sqlalchemy import BigInteger, Integer, SmallInteger, String
+from sqlalchemy import Integer, SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, SoftDeleteMixin, TenantMixin
+from app.models.base import BaseModel, TenantMixin
 
 
-class Permission(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
-    """Permission model (Menu/Resource)."""
+class Permission(BaseModel, TenantMixin):
+    """Permission model (Menu/Resource).
+    
+    ID 通过 BaseModel 自动使用雪花算法生成。
+    """
     
     __tablename__ = "permissions"
     __table_args__ = {"comment": "权限/菜单表"}
     
-    id: Mapped[int] = mapped_column(
-        BigInteger,
-        primary_key=True,
-        comment="主键ID"
-    )
-    parent_id: Mapped[int] = mapped_column(
-        BigInteger,
+    # id 字段继承自 BaseModel，使用雪花算法自动生成
+    parent_id: Mapped[str] = mapped_column(
+        String(50),
         nullable=False,
-        default=0,
+        default="0",
         server_default="0",
         index=True,
         comment="父级ID"

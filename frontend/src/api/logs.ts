@@ -4,6 +4,7 @@
 import request from './request';
 import { ApiResponse, PageResponse } from '@/types/api';
 import { LoginLogResponse, OperationLogResponse, OnlineUserResponse } from '@/types/logs';
+// toIdString removed - IDs are now strings
 
 /**
  * 获取登录日志
@@ -29,7 +30,8 @@ export function getOnlineUsers(): Promise<ApiResponse<OnlineUserResponse[]>> {
 /**
  * 强制下线用户
  */
-export function forceLogoutUser(userId: number): Promise<ApiResponse<null>> {
+export function forceLogoutUser(userId: number | string): Promise<ApiResponse<null>> {
+  // 使用公共方法转换 ID，避免 JavaScript 精度丢失
   return request.post(`/logs/online/${userId}/force-logout`);
 }
 
