@@ -1,0 +1,20 @@
+{
+    "success": "操作成功",
+    "validation_error": "参数校验错误",
+    "system_error": "系统内部错误",
+    "unauthorized": "未授权或登录已过期",
+    "permission_denied": "权限不足",
+    "resource_not_found": "资源未找到",
+    "login_success": "登录成功",
+    "login_failed": "账号或密码错误",
+    "user_inactive": "用户已禁用",
+    "user_exists": "用户名已存在",
+    "user_created": "用户创建成功",
+    "user_updated": "用户更新成功",
+    "user_deleted": "用户删除成功",
+    "password_reset_success": "密码重置成功",
+    "password_min_length": "密码长度至少8位",
+    "password_complexity_error": "密码必须包含大小写字母、数字和特殊字符，且长度至少8位",
+    "password_expired": "密码已过期，请修改密码",
+    "account_logged_in_elsewhere": "账号已在其他地方登录"
+}

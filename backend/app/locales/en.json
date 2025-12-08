@@ -1,0 +1,20 @@
+{
+    "success": "Operation successful",
+    "validation_error": "Validation error",
+    "system_error": "Internal system error",
+    "unauthorized": "Unauthorized or session expired",
+    "permission_denied": "Permission denied",
+    "resource_not_found": "Resource not found",
+    "login_success": "Login successful",
+    "login_failed": "Invalid username or password",
+    "user_inactive": "User is inactive",
+    "user_exists": "Username already exists",
+    "user_created": "User created successfully",
+    "user_updated": "User updated successfully",
+    "user_deleted": "User deleted successfully",
+    "password_reset_success": "Password reset successfully",
+    "password_min_length": "Password must be at least 8 characters",
+    "password_complexity_error": "Password must contain uppercase, lowercase, number, special char and be at least 8 chars",
+    "password_expired": "Password expired, please change your password",
+    "account_logged_in_elsewhere": "Account logged in from another device"
+}

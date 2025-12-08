@@ -1,0 +1,229 @@
+/**
+ * 部门表单组件
+ */
+import { useEffect, useState, useRef } from 'react';
+import { Drawer, Form, Input, Select, TreeSelect, message, Button, Row, Col } from 'antd';
+import { Department, DepartmentCreate, DepartmentUpdate } from '@/types/department';
+import { createDepartment, updateDepartment, getDepartmentTree } from '@/api/department';
+import { useTranslation } from 'react-i18next';
+import { debounce } from '@/utils/debounce';
+
+interface DepartmentFormProps {
+  visible: boolean;
+  department: Department | null;
+  onCancel: () => void;
+  onSuccess: () => void;
+}
+
+export default function DepartmentForm({ visible, department, onCancel, onSuccess }: DepartmentFormProps) {
+  const { t } = useTranslation();
+  const [form] = Form.useForm();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const handleSubmitRef = useRef<() => Promise<void>>();
+
+  useEffect(() => {
+    if (visible) {
+      loadDepartments();
+      if (department) {
+        // 确保 department 有 id
+        if (!department.id) {
+          console.error('Department object missing id:', department);
+          message.error(t('common.invalidData') || '部门数据无效');
+          return;
+        }
+        // 将部门数据转换为表单需要的格式
+        const formValues = {
+          dept_code: department.code || department.dept_code || '',
+          dept_name: department.name || department.dept_name || '',
+          parent_id: department.parent_id,
+          leader_id: department.leader_id,
+          phone: department.phone || '',
+          email: department.email || '',
+          sort_order: department.sort || department.sort_order || 0,
+          status: department.status !== undefined ? department.status : 1,
+          remark: department.remark || '',
+        };
+        form.setFieldsValue(formValues);
+      } else {
+        form.resetFields();
+      }
+    }
+  }, [visible, department, form, t]);
+
+  const loadDepartments = async () => {
+    try {
+      const response = await getDepartmentTree();
+      setDepartments(response.data);
+    } catch (error) {
+      console.error('Failed to load departments:', error);
+    }
+  };
+
+  // 更新提交函数引用
+  useEffect(() => {
+    handleSubmitRef.current = async () => {
+      if (submitting) return;
+      
+      try {
+        const values = await form.validateFields();
+        setSubmitting(true);
+        
+        if (department) {
+          // 保持 ID 为字符串类型，避免 JavaScript 精度丢失
+          // 后端会接收字符串并转换为 BigInteger
+          const deptId = String(department.id);
+          if (!deptId) {
+            console.error('Invalid department ID:', department.id, 'type:', typeof department.id);
+            message.error(t('common.invalidId') || '无效的部门ID');
+            return;
+          }
+          console.log('Updating department:', { id: deptId, originalId: department.id, department, values });
+          await updateDepartment(deptId as any, values as DepartmentUpdate);
+          message.success(t('common.updateSuccess'));
+        } else {
+          await createDepartment(values as DepartmentCreate);
+          message.success(t('common.createSuccess'));
+        }
+        setSubmitting(false);
+        onSuccess();
+      } catch (error: any) {
+        setSubmitting(false);
+        if (error.errorFields) {
+          // 表单验证错误
+          return;
+        }
+        message.error(error.message || t('common.operationFailed'));
+      }
+    };
+  }, [department, submitting, form, onSuccess, t]);
+
+  // 防抖的提交处理
+  const handleSubmitDebounced = useRef(
+    debounce(() => {
+      if (handleSubmitRef.current) {
+        handleSubmitRef.current();
+      }
+    }, 300)
+  ).current;
+
+  // 转换部门树为TreeSelect格式
+  const convertToTreeData = (depts: Department[]): any[] => {
+    return depts.map((dept) => {
+      const deptName = dept.name || dept.dept_name || `部门-${dept.id}`;
+      return {
+        title: deptName,
+        value: dept.id,
+        key: dept.id,
+        children: dept.children ? convertToTreeData(dept.children) : undefined,
+      };
+    });
+  };
+
+  return (
+    <Drawer
+      title={department ? t('department.editDepartment') : t('department.createDepartment')}
+      open={visible}
+      onClose={onCancel}
+      width={720}
+      destroyOnClose
+      footer={
+        <div style={{ textAlign: 'right', padding: '10px 0' }}>
+          <Button onClick={onCancel} disabled={submitting} style={{ marginRight: 8 }}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="primary" onClick={handleSubmitDebounced} loading={submitting}>
+            {t('common.save')}
+          </Button>
+        </div>
+      }
+    >
+      <Form form={form} layout="vertical">
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="dept_code"
+              label={t('department.departmentCode')}
+              rules={[{ required: true, message: t('department.pleaseInputCode') }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="dept_name"
+              label={t('department.departmentName')}
+              rules={[{ required: true, message: t('department.pleaseInputName') }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="parent_id" label={t('department.parentDepartment')}>
+              <TreeSelect
+                placeholder={t('common.pleaseSelect', { field: t('department.parentDepartment') })}
+                treeData={convertToTreeData(departments)}
+                allowClear
+                showSearch
+                treeDefaultExpandAll
+                filterTreeNode={(inputValue, node) =>
+                  (node.title as string)?.toLowerCase().includes(inputValue.toLowerCase()) ?? false
+                }
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="leader_id" label={t('department.leader')}>
+              <Input placeholder={t('department.leaderPlaceholder')} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="phone" label={t('department.phone')}>
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="email"
+              label={t('department.email')}
+              rules={[{ type: 'email', message: t('common.invalidEmail') }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="sort_order" label={t('department.sortOrder')} initialValue={0}>
+              <Input type="number" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="status" label={t('department.status')} initialValue={1}>
+              <Select>
+                <Select.Option value={0}>{t('common.disabled')}</Select.Option>
+                <Select.Option value={1}>{t('common.normal')}</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item name="remark" label={t('common.remark')}>
+              <Input.TextArea rows={4} placeholder={t('common.remarkPlaceholder')} />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Form>
+    </Drawer>
+  );
+}
+

@@ -1,0 +1,84 @@
+"""
+User schemas.
+"""
+from datetime import datetime
+from typing import Optional, List
+
+from pydantic import BaseModel, ConfigDict, Field, EmailStr, field_validator
+from app.schemas.common import PageParams, Response
+from app.core import security
+from app.core.exceptions import BusinessException
+
+
+class UserBase(BaseModel):
+    """Base User schema."""
+    username: str = Field(..., min_length=3, max_length=50, description="用户名")
+    email: Optional[EmailStr] = Field(None, description="邮箱")
+    phone: Optional[str] = Field(None, max_length=20, description="手机号")
+    real_name: Optional[str] = Field(None, max_length=50, description="真实姓名")
+    nickname: Optional[str] = Field(None, max_length=50, description="昵称")
+    dept_id: Optional[int] = Field(None, description="部门ID")
+    position: Optional[str] = Field(None, max_length=50, description="职位")
+    gender: Optional[int] = Field(0, description="性别:0未知,1男,2女")
+    status: Optional[int] = Field(1, description="状态:0禁用,1正常")
+    remark: Optional[str] = Field(None, max_length=500, description="备注")
+
+
+class UserCreate(UserBase):
+    """User creation schema."""
+    password: str = Field(..., description="密码")
+    role_ids: Optional[List[int]] = Field(None, description="角色ID列表")
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if not security.validate_password_strength(v):
+            raise ValueError("Password is too weak. Must be at least 8 chars, incl. upper, lower, digit, special.")
+        return v
+
+
+class UserUpdate(BaseModel):
+    """User update schema."""
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    real_name: Optional[str] = None
+    nickname: Optional[str] = None
+    dept_id: Optional[int] = None
+    position: Optional[str] = None
+    gender: Optional[int] = None
+    status: Optional[int] = None
+    remark: Optional[str] = None
+    role_ids: Optional[List[int]] = None
+
+
+class UserResponse(UserBase):
+    """User response schema."""
+    id: int
+    user_type: int
+    avatar: Optional[str]
+    created_at: datetime
+    last_login_time: Optional[datetime]
+    role_ids: Optional[List[int]] = Field(default_factory=list, description="角色ID列表")
+    roles: Optional[List[dict]] = Field(default_factory=list, description="角色详细信息")
+
+    class Config:
+        from_attributes = True
+
+
+class UserListResponse(BaseModel):
+    """User list response schema."""
+    total: int
+    items: List[UserResponse]
+
+
+class UserPasswordUpdate(BaseModel):
+    """User password update schema."""
+    old_password: str = Field(..., description="旧密码")
+    new_password: str = Field(..., description="新密码")
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if not security.validate_password_strength(v):
+            raise ValueError("Password is too weak")
+        return v

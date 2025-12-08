@@ -1,0 +1,20 @@
+{
+    "success": "操作完了",
+    "validation_error": "バリデーションエラー",
+    "system_error": "システム内部エラー",
+    "unauthorized": "未認証またはセッション期限切れ",
+    "permission_denied": "アクセス拒否",
+    "resource_not_found": "リソースが見つかりません",
+    "login_success": "ログイン成功",
+    "login_failed": "ユーザー名またはパスワードが正しくありません",
+    "user_inactive": "ユーザーは無効です",
+    "user_exists": "ユーザー名は既に存在します",
+    "user_created": "ユーザー作成成功",
+    "user_updated": "ユーザー更新成功",
+    "user_deleted": "ユーザー削除成功",
+    "password_reset_success": "パスワードリセット成功",
+    "password_min_length": "パスワードは8文字以上である必要があります",
+    "password_complexity_error": "パスワードには、大文字、小文字、数字、特殊文字を含める必要があり、8文字以上である必要があります",
+    "password_expired": "パスワードの有効期限が切れました。変更してください",
+    "account_logged_in_elsewhere": "他の端末でログインされています"
+}
