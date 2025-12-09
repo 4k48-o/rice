@@ -76,9 +76,8 @@ export default function UserList() {
   // 防抖的查询和刷新函数
   const debouncedLoadUsers = useDebounce(loadUsers, 500);
 
-  const handleDelete = async (id: number | string) => {
+  const handleDelete = async (id: string) => {
     try {
-      // 使用公共方法转换 ID，避免 JavaScript 精度丢失
       await deleteUser(id);
       message.success(t('common.deleteSuccess'));
       loadUsers();

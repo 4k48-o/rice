@@ -57,7 +57,46 @@ async def get_users(
     
     # Manual conversion because generic Response has data: dict
     # Serialize to dict to ensure datetime fields are properly converted
-    items = [UserResponse.model_validate(u).model_dump(mode='json') for u in users]
+    # Convert roles from Role objects to dictionaries before validation
+    items = []
+    for u in users:
+        # Get roles for this user
+        roles = u.roles if hasattr(u, 'roles') and u.roles else []
+        # Convert roles to dictionaries
+        roles_dict = [{"id": role.id, "name": role.name, "code": role.code} for role in roles]
+        role_ids = [role.id for role in roles]
+        
+        # Temporarily remove roles from user object to avoid validation error
+        # Create a copy of user attributes without roles
+        user_data = {
+            "id": u.id,
+            "username": u.username,
+            "real_name": u.real_name,
+            "nickname": u.nickname,
+            "email": u.email,
+            "phone": u.phone,
+            "user_type": u.user_type,
+            "dept_id": u.dept_id,
+            "position": u.position,
+            "status": u.status,
+            "avatar": u.avatar,
+            "gender": u.gender,
+            "last_login_time": u.last_login_time,
+            "last_login_ip": u.last_login_ip,
+            "login_count": u.login_count,
+            "password_updated_at": u.password_updated_at,
+            "must_change_password": u.must_change_password,
+            "created_at": u.created_at,
+            "updated_at": u.updated_at,
+            "tenant_id": u.tenant_id,
+            "dept_name": getattr(u, 'dept_name', None),
+            "roles": roles_dict,  # Already converted to dict
+            "role_ids": role_ids
+        }
+        
+        # Create user dict using model_validate with the prepared data
+        user_dict = UserResponse.model_validate(user_data).model_dump(mode='json')
+        items.append(user_dict)
     
     return {
         "code": 200,

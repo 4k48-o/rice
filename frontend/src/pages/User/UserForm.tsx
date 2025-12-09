@@ -10,8 +10,6 @@ import { createUser, updateUser } from '@/api/user';
 import { useTranslation } from 'react-i18next';
 import { Permission } from '@/components/Permission/Permission';
 import { useDebounce } from '@/hooks/useDebounce';
-// toIdString removed - IDs are now strings
-import { normalizeFormData } from '@/utils/formData';
 import { DepartmentSelect } from '@/components/DepartmentSelect';
 import { formRules } from '@/utils/formRules';
 
@@ -45,16 +43,11 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
       const values = await form.validateFields();
       setSubmitting(true);
       
-      // 统一处理表单数据中的ID字段：将string类型的ID转换为number
-      // 这样确保后端能正确接收和处理（后端Schema期望int类型）
-      const normalizedValues = normalizeFormData(values);
-      
       if (user) {
-        // 使用公共方法转换 ID，避免 JavaScript 精度丢失
-        await updateUser(user.id, normalizedValues as UserUpdate);
+        await updateUser(user.id, values as UserUpdate);
         message.success(t('common.updateSuccess'));
       } else {
-        await createUser(normalizedValues as UserCreate);
+        await createUser(values as UserCreate);
         message.success(t('common.createSuccess'));
       }
       setSubmitting(false);
