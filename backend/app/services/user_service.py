@@ -14,7 +14,8 @@ from app.models.associations import UserRole
 from app.models.tenant import Tenant
 
 from app.core.security import get_password_hash
-from app.services.department_service import department_service
+from app.services.department_service import department_service, DepartmentService
+from app.services.role_service import RoleService
 
 
 class UserService:
@@ -188,11 +189,50 @@ class UserService:
         tenant_id: str = "0"
     ) -> User:
         """Create a new user with roles."""
-        # Check if username exists
-        stmt = select(User).where(User.username == user_in["username"])
+        # Business validation: Check if username exists
+        stmt = select(User).where(
+            User.username == user_in["username"],
+            User.is_deleted == False
+        )
         result = await db.execute(stmt)
         if result.scalars().first():
             raise ValueError("Username already exists")
+        
+        # Business validation: Check if email exists (if provided)
+        if user_in.get("email"):
+            stmt = select(User).where(
+                User.email == user_in["email"],
+                User.is_deleted == False
+            )
+            result = await db.execute(stmt)
+            if result.scalars().first():
+                raise ValueError("Email already exists")
+        
+        # Business validation: Check if phone exists (if provided)
+        if user_in.get("phone"):
+            stmt = select(User).where(
+                User.phone == user_in["phone"],
+                User.is_deleted == False
+            )
+            result = await db.execute(stmt)
+            if result.scalars().first():
+                raise ValueError("Phone number already exists")
+        
+        # Business validation: Check if department exists (if provided)
+        if user_in.get("dept_id"):
+            dept = await DepartmentService.get_department_by_id(db, user_in["dept_id"], tenant_id)
+            if not dept:
+                raise ValueError("Department not found")
+        
+        # Business validation: Check if roles exist (if provided)
+        if "role_ids" in user_in and user_in["role_ids"]:
+            for role_id in user_in["role_ids"]:
+                role = await RoleService.get_role_by_id(db, role_id)
+                if not role:
+                    raise ValueError(f"Role not found: {role_id}")
+                # Check tenant match for roles
+                if role.tenant_id != tenant_id and tenant_id != "0":
+                    raise ValueError(f"Role {role_id} does not belong to current tenant")
             
         hashed_password = get_password_hash(user_in["password"])
         
@@ -236,6 +276,44 @@ class UserService:
         user = await UserService.get_by_id(db, user_id)
         if not user:
             return None
+        
+        # Business validation: Check if email exists (if being updated, exclude current user)
+        if "email" in user_in and user_in["email"] is not None:
+            stmt = select(User).where(
+                User.email == user_in["email"],
+                User.id != user_id,
+                User.is_deleted == False
+            )
+            result = await db.execute(stmt)
+            if result.scalars().first():
+                raise ValueError("Email already exists")
+        
+        # Business validation: Check if phone exists (if being updated, exclude current user)
+        if "phone" in user_in and user_in["phone"] is not None:
+            stmt = select(User).where(
+                User.phone == user_in["phone"],
+                User.id != user_id,
+                User.is_deleted == False
+            )
+            result = await db.execute(stmt)
+            if result.scalars().first():
+                raise ValueError("Phone number already exists")
+        
+        # Business validation: Check if department exists (if being updated)
+        if "dept_id" in user_in and user_in["dept_id"] is not None:
+            dept = await DepartmentService.get_department_by_id(db, user_in["dept_id"], user.tenant_id)
+            if not dept:
+                raise ValueError("Department not found")
+        
+        # Business validation: Check if roles exist (if being updated)
+        if "role_ids" in user_in and user_in["role_ids"] is not None:
+            for role_id in user_in["role_ids"]:
+                role = await RoleService.get_role_by_id(db, role_id)
+                if not role:
+                    raise ValueError(f"Role not found: {role_id}")
+                # Check tenant match for roles
+                if role.tenant_id != user.tenant_id and user.tenant_id != "0":
+                    raise ValueError(f"Role {role_id} does not belong to current tenant")
             
         # Update basic fields
         for field in ["email", "phone", "real_name", "nickname", "dept_id", "position", "gender", "status", "remark"]:

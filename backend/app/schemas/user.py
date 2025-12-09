@@ -1,6 +1,7 @@
 """
 User schemas.
 """
+import re
 from datetime import datetime
 from typing import Optional, List
 
@@ -22,6 +23,16 @@ class UserBase(BaseModel):
     gender: Optional[int] = Field(0, description="性别:0未知,1男,2女")
     status: Optional[int] = Field(1, description="状态:0禁用,1正常")
     remark: Optional[str] = Field(None, max_length=500, description="备注")
+    
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        """Validate phone number format (1[3-9]\d{9})."""
+        if v is None or v == "":
+            return v
+        if not re.match(r"^1[3-9]\d{9}$", v):
+            raise ValueError("Invalid phone number format. Must be 11 digits starting with 1[3-9].")
+        return v
 
 
 class UserCreate(UserBase):
@@ -39,16 +50,26 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """User update schema."""
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    real_name: Optional[str] = None
-    nickname: Optional[str] = None
-    dept_id: Optional[str] = None
-    position: Optional[str] = None
-    gender: Optional[int] = None
-    status: Optional[int] = None
-    remark: Optional[str] = None
-    role_ids: Optional[List[str]] = None
+    email: Optional[EmailStr] = Field(None, description="邮箱")
+    phone: Optional[str] = Field(None, max_length=20, description="手机号")
+    real_name: Optional[str] = Field(None, max_length=50, description="真实姓名")
+    nickname: Optional[str] = Field(None, max_length=50, description="昵称")
+    dept_id: Optional[str] = Field(None, description="部门ID")
+    position: Optional[str] = Field(None, max_length=50, description="职位")
+    gender: Optional[int] = Field(None, description="性别:0未知,1男,2女")
+    status: Optional[int] = Field(None, description="状态:0禁用,1正常")
+    remark: Optional[str] = Field(None, max_length=500, description="备注")
+    role_ids: Optional[List[str]] = Field(None, description="角色ID列表")
+    
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        """Validate phone number format (1[3-9]\d{9})."""
+        if v is None or v == "":
+            return v
+        if not re.match(r"^1[3-9]\d{9}$", v):
+            raise ValueError("Invalid phone number format. Must be 11 digits starting with 1[3-9].")
+        return v
 
 
 class UserResponse(UserBase):
