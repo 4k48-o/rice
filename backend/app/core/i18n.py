@@ -46,23 +46,43 @@ class I18n:
         Translate key to current locale.
         If key not found, return key (or English fallback).
         Support string formatting via kwargs.
+        Support nested keys with dot notation (e.g., "menu.invalid_parent").
         """
         locale = self.get_locale()
         translations = self._locales.get(locale, {})
         
-        text = translations.get(key)
+        # Support nested keys with dot notation
+        keys = key.split(".")
+        text = translations
+        for k in keys:
+            if isinstance(text, dict):
+                text = text.get(k)
+            else:
+                text = None
+                break
         
-        # Fallback to default if not found (optional, or return key)
+        # Fallback to default locale if not found
         if text is None:
-            text = self._locales.get(self.default_locale, {}).get(key, key)
+            default_translations = self._locales.get(self.default_locale, {})
+            text = default_translations
+            for k in keys:
+                if isinstance(text, dict):
+                    text = text.get(k)
+                else:
+                    text = None
+                    break
+        
+        # Final fallback to key itself
+        if text is None:
+            text = key
             
-        if kwargs and text:
+        if kwargs and isinstance(text, str):
             try:
                 return text.format(**kwargs)
             except Exception:
                 pass
                 
-        return text
+        return text if isinstance(text, str) else key
 
 # Global instance
 i18n = I18n()

@@ -189,7 +189,7 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
             <Form.Item 
               name="phone" 
               label={t('department.phone')}
-              rules={[formRules.phone]}
+              rules={formRules.phone}
             >
               <Input />
             </Form.Item>
@@ -198,7 +198,7 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
             <Form.Item
               name="email"
               label={t('department.email')}
-              rules={[formRules.email]}
+              rules={formRules.email}
             >
               <Input />
             </Form.Item>

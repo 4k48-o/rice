@@ -16,5 +16,27 @@
     "password_min_length": "Password must be at least 8 characters",
     "password_complexity_error": "Password must contain uppercase, lowercase, number, special char and be at least 8 chars",
     "password_expired": "Password expired, please change your password",
-    "account_logged_in_elsewhere": "Account logged in from another device"
+    "account_logged_in_elsewhere": "Account logged in from another device",
+    "menu": {
+        "invalid_parent": "Invalid parent menu",
+        "circular_reference": "Circular reference detected, cannot set this parent menu"
+    },
+    "dict": {
+        "typeManagement": "Dictionary Type Management",
+        "dataManagement": "Dictionary Data Management",
+        "typeName": "Dictionary Type Name",
+        "typeCode": "Dictionary Type Code",
+        "label": "Dictionary Label",
+        "value": "Dictionary Value",
+        "codeExists": "Dictionary type code already exists",
+        "valueExists": "Dictionary value already exists",
+        "typeNotFound": "Dictionary type not found",
+        "typeHasData": "Dictionary type has associated data, cannot delete",
+        "createType": "Create Dictionary Type",
+        "updateType": "Update Dictionary Type",
+        "deleteType": "Delete Dictionary Type",
+        "createData": "Create Dictionary Data",
+        "updateData": "Update Dictionary Data",
+        "deleteData": "Delete Dictionary Data"
+    }
 }

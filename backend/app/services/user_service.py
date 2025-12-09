@@ -278,26 +278,30 @@ class UserService:
             return None
         
         # Business validation: Check if email exists (if being updated, exclude current user)
-        if "email" in user_in and user_in["email"] is not None:
-            stmt = select(User).where(
-                User.email == user_in["email"],
-                User.id != user_id,
-                User.is_deleted == False
-            )
-            result = await db.execute(stmt)
-            if result.scalars().first():
-                raise ValueError("Email already exists")
+        if "email" in user_in and user_in["email"] is not None and user_in["email"] != "":
+            # Skip check if new email is the same as current user's email
+            if user_in["email"] != user.email:
+                stmt = select(User).where(
+                    User.email == user_in["email"],
+                    User.id != user_id,
+                    User.is_deleted == False
+                )
+                result = await db.execute(stmt)
+                if result.scalars().first():
+                    raise ValueError("Email already exists")
         
         # Business validation: Check if phone exists (if being updated, exclude current user)
-        if "phone" in user_in and user_in["phone"] is not None:
-            stmt = select(User).where(
-                User.phone == user_in["phone"],
-                User.id != user_id,
-                User.is_deleted == False
-            )
-            result = await db.execute(stmt)
-            if result.scalars().first():
-                raise ValueError("Phone number already exists")
+        if "phone" in user_in and user_in["phone"] is not None and user_in["phone"] != "":
+            # Skip check if new phone is the same as current user's phone
+            if user_in["phone"] != user.phone:
+                stmt = select(User).where(
+                    User.phone == user_in["phone"],
+                    User.id != user_id,
+                    User.is_deleted == False
+                )
+                result = await db.execute(stmt)
+                if result.scalars().first():
+                    raise ValueError("Phone number already exists")
         
         # Business validation: Check if department exists (if being updated)
         if "dept_id" in user_in and user_in["dept_id"] is not None:

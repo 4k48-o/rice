@@ -10,6 +10,8 @@ from app.models.role import Role
 from app.models.permission import Permission
 from app.models.menu import Menu
 from app.models.department import Department
+from app.models.dict_type import DictType
+from app.models.dict_data import DictData
 from app.models.associations import UserRole, RolePermission
 
 __all__ = [
@@ -24,6 +26,8 @@ __all__ = [
     "Permission",
     "Menu",
     "Department",
+    "DictType",
+    "DictData",
     "UserRole",
     "RolePermission",
 ]

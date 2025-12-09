@@ -89,6 +89,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       '/system/role': 'role.roleManagement',
       '/system/menu': 'menu.menuManagement',
       '/system/dept': 'department.departmentManagement',
+      '/system/dict': 'dict.typeManagement',
       '/monitor': 'menu.monitor',
       '/monitor/online': 'monitor.onlineUsers',
       '/monitor/loginlog': 'monitor.loginLog',
@@ -96,6 +97,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       'role:list': 'role.roleManagement',
       'menu:list': 'menu.menuManagement',
       'dept:list': 'department.departmentManagement',
+      'dict:list': 'dict.typeManagement',
       'monitor:online': 'monitor.onlineUsers',
       'monitor:loginlog': 'monitor.loginLog',
     };

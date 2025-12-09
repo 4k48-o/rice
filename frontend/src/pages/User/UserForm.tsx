@@ -55,10 +55,12 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
     } catch (error: any) {
       setSubmitting(false);
       if (error.errorFields) {
-        // 表单验证错误
+        // 表单验证错误（前端校验失败）
         return;
       }
-      message.error(error.message || t('common.operationFailed'));
+      // API 错误已经在 request 拦截器中统一处理并显示消息了
+      // 这里不需要再次显示，避免重复
+      // 如果需要特殊处理，可以在这里添加逻辑
     }
   };
 
@@ -110,12 +112,20 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="real_name" label={t('user.realName')}>
+            <Form.Item 
+              name="real_name" 
+              label={t('user.realName')}
+              rules={formRules.realName}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="nickname" label={t('user.nickname')}>
+            <Form.Item 
+              name="nickname" 
+              label={t('user.nickname')}
+              rules={formRules.nickname}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -126,7 +136,7 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
             <Form.Item
               name="email"
               label={t('user.email')}
-              rules={[formRules.email]}
+              rules={formRules.email}
             >
               <Input />
             </Form.Item>
@@ -135,7 +145,7 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
             <Form.Item 
               name="phone" 
               label={t('user.phone')}
-              rules={[formRules.phone]}
+              rules={formRules.phone}
             >
               <Input />
             </Form.Item>
@@ -152,7 +162,11 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="position" label={t('user.position')}>
+            <Form.Item 
+              name="position" 
+              label={t('user.position')}
+              rules={formRules.position}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -180,7 +194,11 @@ export default function UserForm({ visible, user, onCancel, onSuccess }: UserFor
 
         <Row gutter={16}>
           <Col span={24}>
-            <Form.Item name="remark" label={t('user.remark')}>
+            <Form.Item 
+              name="remark" 
+              label={t('user.remark')}
+              rules={formRules.remark}
+            >
               <TextArea rows={4} placeholder={t('user.remarkPlaceholder')} />
             </Form.Item>
           </Col>

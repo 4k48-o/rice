@@ -10,6 +10,7 @@ import UserList from '@/pages/User/UserList';
 import DepartmentList from '@/pages/Department/DepartmentList';
 import { RoleList } from '@/pages/Role';
 import { MenuList } from '@/pages/Menu';
+import { DictList } from '@/pages/Dict';
 import { OnlineUser, LoginLog } from '@/pages/Monitor';
 
 // 路由守卫组件
@@ -76,6 +77,14 @@ export const router = createBrowserRouter([
         element: (
           <MainLayout>
             <DepartmentList />
+          </MainLayout>
+        ),
+      },
+      {
+        path: '/system/dict',
+        element: (
+          <MainLayout>
+            <DictList />
           </MainLayout>
         ),
       },

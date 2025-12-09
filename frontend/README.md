@@ -96,6 +96,11 @@ frontend/
 │   └── ...
 ```
 
+## 测试
+
+- **[测试快速开始](./docs/TESTING_QUICK_START.md)** - 快速开始运行测试
+- **[测试指南](./docs/TESTING_GUIDE.md)** - 完整的测试文档
+
 ## 更多信息
 
 详细的使用说明和示例请查看 [开发规范文档](./docs/FRONTEND_DEVELOPMENT_GUIDE.md)。

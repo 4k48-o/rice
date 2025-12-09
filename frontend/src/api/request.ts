@@ -54,28 +54,14 @@ request.interceptors.response.use(
 
     // 如果code不是200，说明有错误
     if (res.code !== 200) {
-      // Token过期或无效
-      if (res.code === 401 || res.code === 20001 || res.code === 20002) {
-        // 清除认证信息
-        storage.clearAuth();
-        // 显示错误消息
-        message.error(res.message || i18n.t('common.loginExpired'));
-        // 延迟跳转，确保消息能显示
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 1000);
-        return Promise.reject(new Error(res.message || 'Unauthorized'));
-      }
-
-      // 无权限
-      if (res.code === 403 || res.code === 20003) {
-        message.error(res.message || i18n.t('common.noPermission'));
-        return Promise.reject(new Error(res.message || 'Forbidden'));
-      }
-
-      // 其他错误
-      message.error(res.message || i18n.t('common.requestFailed'));
-      return Promise.reject(new Error(res.message || 'Request failed'));
+      // 构造错误对象，包含完整的响应信息，让错误拦截器统一处理
+      const error: any = new Error(res.message || 'Request failed');
+      error.response = {
+        status: res.code,
+        data: res,
+      };
+      error.config = response.config;
+      return Promise.reject(error);
     }
 
     // 返回完整的响应对象，包含code、message、data等
@@ -88,7 +74,7 @@ request.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // HTTP状态码错误
+    // HTTP状态码错误或业务错误码
     const { status, data, config } = error.response;
     const url = config?.url || '';
     
@@ -98,6 +84,9 @@ request.interceptors.response.use(
     let errorMessage = i18n.t('common.requestFailed');
 
     // 如果后端返回了标准格式的错误响应（包含code字段）
+    // 这包括两种情况：
+    // 1. HTTP 200 但业务 code !== 200（从正常响应拦截器 reject 过来的）
+    // 2. HTTP 非 200 且响应体包含 code 字段
     if (data && typeof data === 'object' && 'code' in data) {
       // 处理标准格式的错误响应
       if (data.code === 401 || data.code === 20001 || data.code === 20002) {
@@ -117,11 +106,13 @@ request.interceptors.response.use(
       } else if (data.code === 403 || data.code === 20003) {
         errorMessage = data.message || i18n.t('common.noPermission');
       } else {
+        // 业务错误（如 400: Phone number already exists）
         errorMessage = data.message || i18n.t('common.requestFailed');
       }
     } else if (data && typeof data === 'object' && 'message' in data) {
       errorMessage = data.message || i18n.t('common.requestFailed');
     } else {
+      // 处理 HTTP 状态码错误（没有业务 code 字段的情况）
       switch (status) {
         case 400:
           errorMessage = data?.message || data?.detail || i18n.t('common.paramError');
@@ -171,6 +162,7 @@ request.interceptors.response.use(
     }
     
     // 将错误消息附加到错误对象上，供业务层使用
+    error.message = errorMessage;
     error.errorMessage = errorMessage;
     return Promise.reject(error);
   }

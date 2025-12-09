@@ -133,7 +133,7 @@ class MenuService:
         for menu in menus:
             menu_node = menu_dict[menu.id]
             
-            if menu.parent_id is None or menu.parent_id == 0:
+            if menu.parent_id is None or menu.parent_id == "" or menu.parent_id == "0":
                 # Root menu
                 root_menus.append(menu_node)
             else:
@@ -223,11 +223,11 @@ class MenuService:
     async def get_all_menus(
         db: AsyncSession,
         tenant_id: str,
-        page: str = 1,
-        page_size: str = 20,
+        page: int = 1,
+        page_size: int = 20,
         keyword: Optional[str] = None,
-        menu_type: Optional[str] = None,
-        status: Optional[str] = None
+        menu_type: Optional[int] = None,
+        status: Optional[int] = None
     ) -> tuple[List[Menu], int]:
         """
         Get all menus with pagination and filters.
@@ -288,14 +288,14 @@ class MenuService:
         return MenuService.build_menu_tree(menus)
     
     @staticmethod
-    async def validate_parent_menu(db: AsyncSession, parent_id: Optional[int], tenant_id: str) -> bool:
+    async def validate_parent_menu(db: AsyncSession, parent_id: Optional[str], tenant_id: str) -> bool:
         """
         Validate that parent menu exists.
         
         Returns:
             True if valid (parent_id is None or parent exists)
         """
-        if parent_id is None or parent_id == 0:
+        if parent_id is None or parent_id == "" or parent_id == "0":
             return True
         
         parent = await MenuService.get_menu_by_id(db, parent_id)
@@ -312,7 +312,7 @@ class MenuService:
     async def check_circular_reference(
         db: AsyncSession,
         menu_id: str,
-        new_parent_id: Optional[int]
+        new_parent_id: Optional[str]
     ) -> bool:
         """
         Check if setting new_parent_id would create a circular reference.
@@ -320,7 +320,7 @@ class MenuService:
         Returns:
             True if no circular reference (safe to update)
         """
-        if new_parent_id is None or new_parent_id == 0:
+        if new_parent_id is None or new_parent_id == "" or new_parent_id == "0":
             return True
         
         # Can't set self as parent
@@ -331,7 +331,7 @@ class MenuService:
         current_id = new_parent_id
         visited = set()
         
-        while current_id and current_id != 0:
+        while current_id and current_id != "" and current_id != "0":
             if current_id in visited:
                 # Infinite loop detected in existing data
                 return False

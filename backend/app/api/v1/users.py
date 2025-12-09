@@ -256,11 +256,19 @@ async def update_user(
         }
 
     # Update user (username cannot be changed via UserUpdate schema)
-    updated_user = await user_service.update_user(
-        db,
-        user_id,
-        user_in.model_dump(exclude_unset=True)
-    )
+    try:
+        updated_user = await user_service.update_user(
+            db,
+            user_id,
+            user_in.model_dump(exclude_unset=True)
+        )
+    except ValueError as e:
+        return {
+            "code": 400,
+            "message": str(e),
+            "data": None,
+            "timestamp": int(time.time()),
+        }
     
     if not updated_user:
         return {

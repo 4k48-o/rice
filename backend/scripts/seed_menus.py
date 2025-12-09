@@ -95,6 +95,17 @@ async def seed_menus():
                         "permission_code": "dept:list",
                         "tenant_id": tenant_id,
                     },
+                    {
+                        "name": "dict",
+                        "title": "字典管理",
+                        "path": "/system/dict",
+                        "component": "system/dict/index",
+                        "icon": "file-text",
+                        "sort": 5,
+                        "type": 2,
+                        "permission_code": "dict:list",
+                        "tenant_id": tenant_id,
+                    },
                 ]
             },
             # Monitoring (Directory)

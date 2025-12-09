@@ -78,7 +78,7 @@ async def get_menu_tree(
     }
 
 
-@router.get("/user", response_model=List[MenuTreeNode])
+@router.get("/user", response_model=Response)
 async def get_user_menu_tree(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -94,13 +94,18 @@ async def get_user_menu_tree(
     # Build tree structure
     menu_tree = menu_service.build_menu_tree(menus)
     
-    return menu_tree
+    return {
+        "code": 200,
+        "message": i18n.t("success"),
+        "data": menu_tree,
+        "timestamp": int(time.time())
+    }
 
 
 @router.get("/{menu_id}", response_model=Response)
 @require_permissions(["menu:query"])
 async def get_menu(
-    menu_id: int,
+    menu_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -114,7 +119,7 @@ async def get_menu(
     if not menu:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=i18n.t("not_found")
+            detail=i18n.t("resource_not_found")
         )
     
     # Check tenant
@@ -144,9 +149,15 @@ async def create_menu(
         menu = await menu_service.create_menu(db, menu_data, current_user.tenant_id)
         await db.commit()
     except ValueError as e:
+        error_msg = str(e)
+        # Try to translate common error messages
+        if "Invalid parent menu" in error_msg:
+            error_msg = i18n.t("menu.invalid_parent")
+        elif "Circular reference" in error_msg:
+            error_msg = i18n.t("menu.circular_reference")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=error_msg
         )
     
     return {
@@ -160,7 +171,7 @@ async def create_menu(
 @router.put("/{menu_id}", response_model=dict)
 @require_permissions(["menu:update"])
 async def update_menu(
-    menu_id: int,
+    menu_id: str,
     menu_data: MenuUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -169,15 +180,21 @@ async def update_menu(
     try:
         menu = await menu_service.update_menu(db, menu_id, menu_data)
     except ValueError as e:
+        error_msg = str(e)
+        # Try to translate common error messages
+        if "Invalid parent menu" in error_msg:
+            error_msg = i18n.t("menu.invalid_parent")
+        elif "Circular reference" in error_msg:
+            error_msg = i18n.t("menu.circular_reference")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=error_msg
         )
     
     if not menu:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=i18n.t("not_found")
+            detail=i18n.t("resource_not_found")
         )
     
     await db.commit()
@@ -193,7 +210,7 @@ async def update_menu(
 @router.delete("/{menu_id}", response_model=dict)
 @require_permissions(["menu:delete"])
 async def delete_menu(
-    menu_id: int,
+    menu_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -203,7 +220,7 @@ async def delete_menu(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=i18n.t("not_found")
+            detail=i18n.t("resource_not_found")
         )
     
     await db.commit()

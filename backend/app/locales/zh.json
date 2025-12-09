@@ -16,5 +16,27 @@
     "password_min_length": "密码长度至少8位",
     "password_complexity_error": "密码必须包含大小写字母、数字和特殊字符，且长度至少8位",
     "password_expired": "密码已过期，请修改密码",
-    "account_logged_in_elsewhere": "账号已在其他地方登录"
+    "account_logged_in_elsewhere": "账号已在其他地方登录",
+    "menu": {
+        "invalid_parent": "无效的父菜单",
+        "circular_reference": "检测到循环引用，无法设置该父菜单"
+    },
+    "dict": {
+        "typeManagement": "字典类型管理",
+        "dataManagement": "字典数据管理",
+        "typeName": "字典类型名称",
+        "typeCode": "字典类型编码",
+        "label": "字典标签",
+        "value": "字典值",
+        "codeExists": "字典类型编码已存在",
+        "valueExists": "字典值已存在",
+        "typeNotFound": "字典类型不存在",
+        "typeHasData": "字典类型下存在数据，无法删除",
+        "createType": "创建字典类型",
+        "updateType": "更新字典类型",
+        "deleteType": "删除字典类型",
+        "createData": "创建字典数据",
+        "updateData": "更新字典数据",
+        "deleteData": "删除字典数据"
+    }
 }

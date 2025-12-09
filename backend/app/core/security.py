@@ -5,18 +5,80 @@ from typing import Optional, Any, Union
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+import bcrypt
 
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def _truncate_password(password: str) -> str:
+    """
+    Truncate password to 72 bytes to comply with bcrypt limit.
+    
+    Args:
+        password: Original password string
+        
+    Returns:
+        Truncated password string (max 72 bytes)
+    """
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) <= 72:
+        return password
+    
+    # Truncate to 72 bytes
+    password_bytes = password_bytes[:72]
+    
+    # Remove any incomplete UTF-8 sequences at the end
+    while len(password_bytes) > 0:
+        try:
+            return password_bytes.decode('utf-8')
+        except UnicodeDecodeError:
+            password_bytes = password_bytes[:-1]
+    
+    return ""
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    Verify a password against a hash.
+    
+    Note: bcrypt has a 72-byte limit. If password exceeds this, it will be truncated.
+    """
+    # Truncate password before verification to comply with bcrypt's 72-byte limit
+    plain_password = _truncate_password(plain_password)
+    
+    # Use bcrypt directly to avoid passlib's internal checks
+    try:
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        return bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
+    except Exception:
+        # Fallback to passlib if direct bcrypt fails
+        return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """
+    Hash a password.
+    
+    Note: bcrypt has a 72-byte limit. If password exceeds this, it will be truncated.
+    """
+    # Truncate password before hashing to comply with bcrypt's 72-byte limit
+    password = _truncate_password(password)
+    
+    # Use bcrypt directly to avoid passlib's internal checks
+    try:
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
+    except Exception:
+        # Fallback to passlib if direct bcrypt fails
+        return pwd_context.hash(password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

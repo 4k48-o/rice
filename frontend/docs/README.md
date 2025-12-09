@@ -10,6 +10,10 @@
 - **[PR_REVIEW_CHECKLIST.md](./PR_REVIEW_CHECKLIST.md)** - PR 审查检查清单
 - **[CODE_REVIEW_GUIDE.md](./CODE_REVIEW_GUIDE.md)** - 代码审查指南
 
+### 测试
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - 完整的测试指南
+- **[TESTING_QUICK_START.md](./TESTING_QUICK_START.md)** - 测试快速开始
+
 ### 更新记录
 - **[FRONTEND_UPDATE_SUMMARY.md](./FRONTEND_UPDATE_SUMMARY.md)** - 规范应用更新总结
 

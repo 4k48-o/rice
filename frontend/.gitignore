@@ -1,10 +1,13 @@
 # Dependencies
-node_modules
+node_modules/
 /.pnp
 .pnp.js
 
 # Testing
 /coverage
+/test-results
+/playwright-report
+/playwright/.cache
 
 # Production
 /build
@@ -22,11 +25,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # IDE
-.vscode
-.idea
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# TypeScript
-*.tsbuildinfo
+# OS
+Thumbs.db

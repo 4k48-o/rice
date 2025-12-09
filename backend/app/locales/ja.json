@@ -16,5 +16,27 @@
     "password_min_length": "パスワードは8文字以上である必要があります",
     "password_complexity_error": "パスワードには、大文字、小文字、数字、特殊文字を含める必要があり、8文字以上である必要があります",
     "password_expired": "パスワードの有効期限が切れました。変更してください",
-    "account_logged_in_elsewhere": "他の端末でログインされています"
+    "account_logged_in_elsewhere": "他の端末でログインされています",
+    "menu": {
+        "invalid_parent": "無効な親メニュー",
+        "circular_reference": "循環参照が検出されました。この親メニューを設定できません"
+    },
+    "dict": {
+        "typeManagement": "辞書タイプ管理",
+        "dataManagement": "辞書データ管理",
+        "typeName": "辞書タイプ名",
+        "typeCode": "辞書タイプコード",
+        "label": "辞書ラベル",
+        "value": "辞書値",
+        "codeExists": "辞書タイプコードは既に存在します",
+        "valueExists": "辞書値は既に存在します",
+        "typeNotFound": "辞書タイプが見つかりません",
+        "typeHasData": "辞書タイプに関連データがあるため、削除できません",
+        "createType": "辞書タイプを作成",
+        "updateType": "辞書タイプを更新",
+        "deleteType": "辞書タイプを削除",
+        "createData": "辞書データを作成",
+        "updateData": "辞書データを更新",
+        "deleteData": "辞書データを削除"
+    }
 }
