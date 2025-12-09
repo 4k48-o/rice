@@ -43,22 +43,39 @@ class PermissionService:
         Returns:
             Tree structure with nested children
         """
-        # Convert to dict for quick lookup
-        perm_dict = {perm.id: PermissionTreeNode.model_validate(perm) for perm in permissions}
+        if not permissions:
+            return []
+        
+        # Convert to dict for quick lookup, ensure children is initialized
+        perm_dict = {}
+        for perm in permissions:
+            perm_node = PermissionTreeNode.model_validate(perm)
+            # Ensure children list is initialized
+            if not hasattr(perm_node, 'children') or perm_node.children is None:
+                perm_node.children = []
+            perm_dict[perm.id] = perm_node
         
         # Build tree
         root_perms = []
         for perm in permissions:
             perm_node = perm_dict[perm.id]
             
-            if perm.parent_id is None or perm.parent_id == 0:
+            # Check if it's a root permission (parent_id is None, "0", or 0)
+            parent_id = perm.parent_id
+            if parent_id is None or parent_id == "0" or parent_id == 0:
                 # Root permission
                 root_perms.append(perm_node)
             else:
-                # Child permission
-                parent = perm_dict.get(perm.parent_id)
+                # Child permission - find parent
+                parent = perm_dict.get(str(parent_id))
                 if parent:
+                    # Ensure parent's children list is initialized
+                    if not hasattr(parent, 'children') or parent.children is None:
+                        parent.children = []
                     parent.children.append(perm_node)
+                else:
+                    # Parent not found, treat as root
+                    root_perms.append(perm_node)
         
         return root_perms
     

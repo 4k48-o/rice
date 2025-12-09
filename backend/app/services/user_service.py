@@ -1,7 +1,7 @@
 """
 User service.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Tuple
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import joinedload
@@ -14,6 +14,7 @@ from app.models.associations import UserRole
 from app.models.tenant import Tenant
 
 from app.core.security import get_password_hash
+from app.services.department_service import department_service
 
 
 class UserService:
@@ -77,15 +78,37 @@ class UserService:
         page: str = 1,
         page_size: str = 10,
         username: str = None,
+        email: str = None,
         phone: str = None,
         status: str = None,
+        user_type: str = None,
         dept_id: str = None,
+        last_login_start: Optional[datetime] = None,
+        last_login_end: Optional[datetime] = None,
         tenant_id: str = None
     ) -> Tuple[List[User], int]:
         """
         Get user list with pagination and filtering.
         Includes department information via left join.
+        When dept_id is provided, includes users from all sub-departments.
         """
+        # Convert timezone-aware datetime to timezone-naive for database comparison
+        # Database uses TIMESTAMP WITHOUT TIME ZONE, so we need to remove timezone info
+        if last_login_start and last_login_start.tzinfo is not None:
+            # Convert to UTC and remove timezone info
+            last_login_start = last_login_start.astimezone(timezone.utc).replace(tzinfo=None)
+        if last_login_end and last_login_end.tzinfo is not None:
+            # Convert to UTC and remove timezone info
+            last_login_end = last_login_end.astimezone(timezone.utc).replace(tzinfo=None)
+        
+        # If dept_id is provided, get all sub-department IDs (including self)
+        dept_ids = None
+        if dept_id:
+            dept_ids = await department_service.get_sub_departments(db, dept_id, include_self=True)
+            # If no sub-departments found, use the original dept_id
+            if not dept_ids:
+                dept_ids = [dept_id]
+        
         # Build base query with left join to department
         base_stmt = (
             select(User, Department.name.label('dept_name'))
@@ -98,12 +121,21 @@ class UserService:
             base_stmt = base_stmt.where(User.tenant_id == tenant_id)
         if username:
             base_stmt = base_stmt.where(User.username.like(f"%{username}%"))
+        if email:
+            base_stmt = base_stmt.where(User.email.like(f"%{email}%"))
         if phone:
             base_stmt = base_stmt.where(User.phone.like(f"%{phone}%"))
         if status is not None:
             base_stmt = base_stmt.where(User.status == status)
-        if dept_id:
-            base_stmt = base_stmt.where(User.dept_id == dept_id)
+        if user_type is not None:
+            base_stmt = base_stmt.where(User.user_type == user_type)
+        if dept_ids:
+            # Use IN query to match the department and all its sub-departments
+            base_stmt = base_stmt.where(User.dept_id.in_(dept_ids))
+        if last_login_start:
+            base_stmt = base_stmt.where(User.last_login_time >= last_login_start)
+        if last_login_end:
+            base_stmt = base_stmt.where(User.last_login_time <= last_login_end)
             
         # Count total (build count query with same filters, but without join)
         count_base = select(User).where(User.is_deleted == False)
@@ -111,12 +143,21 @@ class UserService:
             count_base = count_base.where(User.tenant_id == tenant_id)
         if username:
             count_base = count_base.where(User.username.like(f"%{username}%"))
+        if email:
+            count_base = count_base.where(User.email.like(f"%{email}%"))
         if phone:
             count_base = count_base.where(User.phone.like(f"%{phone}%"))
         if status is not None:
             count_base = count_base.where(User.status == status)
-        if dept_id:
-            count_base = count_base.where(User.dept_id == dept_id)
+        if user_type is not None:
+            count_base = count_base.where(User.user_type == user_type)
+        if dept_ids:
+            # Use IN query to match the department and all its sub-departments
+            count_base = count_base.where(User.dept_id.in_(dept_ids))
+        if last_login_start:
+            count_base = count_base.where(User.last_login_time >= last_login_start)
+        if last_login_end:
+            count_base = count_base.where(User.last_login_time <= last_login_end)
         
         count_stmt = select(func.count()).select_from(count_base.subquery())
         total_result = await db.execute(count_stmt)

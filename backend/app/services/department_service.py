@@ -343,18 +343,18 @@ class DepartmentService:
     async def get_sub_departments(
         db: AsyncSession,
         dept_id: str,
-        include_self: bool = False
-    ) -> List[int]:
+        include_self: bool = True
+    ) -> List[str]:
         """
         Get all sub-department IDs recursively.
         
         Args:
             db: Database session
             dept_id: Parent department ID
-            include_self: Whether to include the parent ID itself
+            include_self: Whether to include the parent ID itself (default: True)
             
         Returns:
-            List of department IDs
+            List of department IDs (strings)
         """
         dept_ids = [dept_id] if include_self else []
         
@@ -364,7 +364,7 @@ class DepartmentService:
             Department.is_deleted == False
         )
         result = await db.execute(stmt)
-        child_ids = [row[0] for row in result.all()]
+        child_ids = [str(row[0]) for row in result.all()]
         
         # Recursively get sub-children
         for child_id in child_ids:

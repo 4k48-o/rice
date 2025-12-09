@@ -71,7 +71,8 @@ function MyForm() {
 | filterTreeNode | 树节点过滤函数 | `(inputValue: string, node: any) => boolean` | - |
 | treeLine | 是否显示连接线 | `boolean` | `false` |
 | maxTagCount | 最大标签数量 | `number` | - |
-| dropdownStyle | 下拉框样式 | `React.CSSProperties` | - |
+| dropdownStyle | 下拉框样式（已弃用，请使用 styles.popup.root） | `React.CSSProperties` | - |
+| styles | 下拉框样式（新 API） | `{ popup?: { root?: React.CSSProperties } }` | - |
 
 ## 使用场景
 

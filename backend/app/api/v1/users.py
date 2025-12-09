@@ -1,10 +1,11 @@
 """
 User management API endpoints.
 """
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import get_db
@@ -24,9 +25,13 @@ async def get_users(
     page: int = 1,
     page_size: int = 20,
     username: str = None,
+    email: str = None,
     phone: str = None,
     status: int = None,
+    user_type: int = None,
     dept_id: str = None,
+    last_login_start: Optional[datetime] = Query(None, description="最后登录开始时间"),
+    last_login_end: Optional[datetime] = Query(None, description="最后登录结束时间"),
     current_user: User = Depends(deps.require_permissions("user:list")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -40,9 +45,13 @@ async def get_users(
         page=page,
         page_size=page_size,
         username=username,
+        email=email,
         phone=phone,
         status=status,
+        user_type=user_type,
         dept_id=dept_id,
+        last_login_start=last_login_start,
+        last_login_end=last_login_end,
         tenant_id=current_user.tenant_id
     )
     

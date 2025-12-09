@@ -1,14 +1,15 @@
 /**
  * 部门表单组件
  */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Drawer, Form, Input, Select, TreeSelect, message, Button, Row, Col } from 'antd';
 import { Department, DepartmentCreate, DepartmentUpdate } from '@/types/department';
 import { createDepartment, updateDepartment, getDepartmentTree } from '@/api/department';
 import { useTranslation } from 'react-i18next';
-import { debounce } from '@/utils/debounce';
+import { useDebounce } from '@/hooks/useDebounce';
 // toIdString removed - IDs are now strings
 import { normalizeFormData } from '@/utils/formData';
+import { formRules } from '@/utils/formRules';
 
 interface DepartmentFormProps {
   visible: boolean;
@@ -22,7 +23,6 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
   const [form] = Form.useForm();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const handleSubmitRef = useRef<() => Promise<void>>();
 
   useEffect(() => {
     if (visible) {
@@ -62,60 +62,52 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
     }
   };
 
-  // 更新提交函数引用
-  useEffect(() => {
-    handleSubmitRef.current = async () => {
-      if (submitting) return;
+  // 提交处理函数
+  const handleSubmit = async () => {
+    if (submitting) return;
+    
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
       
-      try {
-        const values = await form.validateFields();
-        setSubmitting(true);
-        
-        // 映射前端字段名到后端字段名
-        const mappedValues: any = {
-          code: values.dept_code,
-          name: values.dept_name,
-          parent_id: values.parent_id,
-          leader_id: values.leader_id,
-          phone: values.phone,
-          email: values.email,
-          sort: values.sort_order,
-          status: values.status,
-          remark: values.remark,
-        };
-        
-        // 统一处理表单数据中的ID字段：将string类型的ID转换为number
-        const normalizedValues = normalizeFormData(mappedValues);
-        
-        if (department) {
-          // 使用公共方法转换 ID，避免 JavaScript 精度丢失
-          await updateDepartment(department.id, normalizedValues as DepartmentUpdate);
-          message.success(t('common.updateSuccess'));
-        } else {
-          await createDepartment(mappedValues as DepartmentCreate);
-          message.success(t('common.createSuccess'));
-        }
-        setSubmitting(false);
-        onSuccess();
-      } catch (error: any) {
-        setSubmitting(false);
-        if (error.errorFields) {
-          // 表单验证错误
-          return;
-        }
-        message.error(error.message || t('common.operationFailed'));
+      // 映射前端字段名到后端字段名
+      const mappedValues: any = {
+        code: values.dept_code,
+        name: values.dept_name,
+        parent_id: values.parent_id,
+        leader_id: values.leader_id,
+        phone: values.phone,
+        email: values.email,
+        sort: values.sort_order,
+        status: values.status,
+        remark: values.remark,
+      };
+      
+      // 统一处理表单数据中的ID字段：将string类型的ID转换为number
+      const normalizedValues = normalizeFormData(mappedValues);
+      
+      if (department) {
+        // 使用公共方法转换 ID，避免 JavaScript 精度丢失
+        await updateDepartment(department.id, normalizedValues as DepartmentUpdate);
+        message.success(t('common.updateSuccess'));
+      } else {
+        await createDepartment(mappedValues as DepartmentCreate);
+        message.success(t('common.createSuccess'));
       }
-    };
-  }, [department, submitting, form, onSuccess, t]);
+      setSubmitting(false);
+      onSuccess();
+    } catch (error: any) {
+      setSubmitting(false);
+      if (error.errorFields) {
+        // 表单验证错误
+        return;
+      }
+      message.error(error.message || t('common.operationFailed'));
+    }
+  };
 
   // 防抖的提交处理
-  const handleSubmitDebounced = useRef(
-    debounce(() => {
-      if (handleSubmitRef.current) {
-        handleSubmitRef.current();
-      }
-    }, 300)
-  ).current;
+  const debouncedSubmit = useDebounce(handleSubmit, 300);
 
   // 转换部门树为TreeSelect格式
   const convertToTreeData = (depts: Department[]): any[] => {
@@ -142,7 +134,7 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
           <Button onClick={onCancel} disabled={submitting} style={{ marginRight: 8 }}>
             {t('common.cancel')}
           </Button>
-          <Button type="primary" onClick={handleSubmitDebounced} loading={submitting}>
+          <Button type="primary" onClick={debouncedSubmit} loading={submitting}>
             {t('common.save')}
           </Button>
         </div>
@@ -154,7 +146,7 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
             <Form.Item
               name="dept_code"
               label={t('department.departmentCode')}
-              rules={[{ required: true, message: t('department.pleaseInputCode') }]}
+              rules={[formRules.required(t('department.departmentCode'))]}
             >
               <Input />
             </Form.Item>
@@ -163,7 +155,7 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
             <Form.Item
               name="dept_name"
               label={t('department.departmentName')}
-              rules={[{ required: true, message: t('department.pleaseInputName') }]}
+              rules={[formRules.required(t('department.departmentName'))]}
             >
               <Input />
             </Form.Item>
@@ -194,7 +186,11 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item name="phone" label={t('department.phone')}>
+            <Form.Item 
+              name="phone" 
+              label={t('department.phone')}
+              rules={[formRules.phone]}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -202,7 +198,7 @@ export default function DepartmentForm({ visible, department, onCancel, onSucces
             <Form.Item
               name="email"
               label={t('department.email')}
-              rules={[{ type: 'email', message: t('common.invalidEmail') }]}
+              rules={[formRules.email]}
             >
               <Input />
             </Form.Item>

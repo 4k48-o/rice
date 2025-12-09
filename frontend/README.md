@@ -1,139 +1,101 @@
-# FastAndt React Admin 前端
-
-基于 React + TypeScript + Ant Design 构建的多租户企业管理系统前端应用。
-
-## 技术栈
-
-- **框架**: React 18+
-- **构建工具**: Vite
-- **语言**: TypeScript
-- **UI组件库**: Ant Design 5.x
-- **路由**: React Router v6
-- **状态管理**: Zustand
-- **HTTP客户端**: Axios
-- **国际化**: react-i18next
-
-## 快速开始
-
-### 安装依赖
-
-```bash
-npm install
-```
-
-### 开发环境运行
-
-```bash
-npm run dev
-```
-
-应用将在 http://localhost:3000 启动。
-
-### 构建生产版本
-
-```bash
-npm run build
-```
-
-### 预览生产构建
-
-```bash
-npm run preview
-```
-
-## 项目结构
-
-```
-frontend/
-├── public/              # 静态资源
-├── src/
-│   ├── api/            # API接口封装
-│   ├── components/     # 公共组件
-│   │   ├── Layout/     # 布局组件
-│   │   ├── Permission/ # 权限控制组件
-│   │   └── ...
-│   ├── hooks/          # 自定义Hooks
-│   ├── locales/         # 国际化资源
-│   ├── pages/          # 页面组件
-│   │   ├── Login/      # 登录页
-│   │   ├── User/       # 用户管理
-│   │   └── Department/ # 部门管理
-│   ├── routes/         # 路由配置
-│   ├── store/          # 状态管理
-│   ├── types/          # TypeScript类型定义
-│   ├── utils/          # 工具函数
-│   ├── App.tsx         # 主应用组件
-│   └── index.tsx       # 应用入口
-├── .eslintrc.json      # ESLint配置
-├── .prettierrc         # Prettier配置
-├── tsconfig.json        # TypeScript配置
-├── vite.config.ts       # Vite配置
-└── package.json         # 项目配置
-```
-
-## 功能特性
-
-### 已实现功能
-
-1. **认证授权模块**
-   - 用户登录/退出
-   - Token管理
-   - 路由守卫
-   - 权限检查
-
-2. **用户管理模块**
-   - 用户列表（分页、搜索、筛选）
-   - 创建/编辑用户
-   - 删除用户
-   - 重置密码
-
-3. **部门管理模块**
-   - 部门树形展示
-   - 创建/编辑部门
-   - 删除部门
-
-4. **国际化支持**
-   - 中文、英文、日文
-   - 语言切换
-
-5. **权限控制**
-   - 路由级权限
-   - 按钮级权限
-   - 权限组件封装
+# 前端项目
 
 ## 开发规范
 
-### 代码规范
+前端开发规范文档位于 `docs/` 目录：
 
-- 使用TypeScript严格模式
-- 组件使用函数式组件 + Hooks
-- 遵循React Hooks最佳实践
-- 使用ESLint和Prettier统一代码风格
+- **[FRONTEND_DEVELOPMENT_GUIDE.md](./docs/FRONTEND_DEVELOPMENT_GUIDE.md)** - 完整的开发规范文档
+- **[FRONTEND_QUICK_REFERENCE.md](./docs/FRONTEND_QUICK_REFERENCE.md)** - 快速参考指南
 
-### 命名规范
+## 核心规范
 
-- 组件文件：PascalCase（如`UserList.tsx`）
-- 工具文件：camelCase（如`formatDate.ts`）
-- 常量文件：UPPER_SNAKE_CASE
+### 1. 页面骨架（Skeleton）
+所有列表页面必须使用 Skeleton 组件作为初始加载状态。
 
-## API配置
+### 2. 数据加载状态
+所有异步操作必须显示加载状态。
 
-前端默认通过Vite代理访问后端API：
+### 3. 按钮防抖
+所有保存、查询、提交按钮必须使用防抖处理。
 
-- 开发环境：`http://localhost:8000`
-- 生产环境：需要配置环境变量或修改`vite.config.ts`中的代理设置
+### 4. 表单校验
+所有表单必须包含常规校验规则。
 
-## 环境变量
+## 工具和组件
 
-创建`.env`文件配置环境变量：
+### Hooks
 
-```env
-VITE_API_BASE_URL=http://localhost:8000
+- `useDebounce` - 防抖 Hook
+- `useAuth` - 认证 Hook
+- `usePermission` - 权限 Hook
+
+### 工具函数
+
+- `formRules` - 表单校验规则工具
+- `debounce` - 防抖工具函数
+
+## 使用示例
+
+### 防抖按钮
+
+```tsx
+import { useDebounce } from '@/hooks/useDebounce';
+
+const handleSubmit = async () => {
+  // 提交逻辑
+};
+
+const debouncedSubmit = useDebounce(handleSubmit, 300);
+
+<Button onClick={debouncedSubmit} loading={submitting}>
+  保存
+</Button>
 ```
 
-## 参考文档
+### 表单校验
 
-- [API接口设计文档](../backend/API_DESIGN.md)
-- [数据库设计文档](../backend/DATABASE_DESIGN.md)
-- [架构设计文档](../ARCHITECTURE_OPTIMIZED.md)
+```tsx
+import { formRules } from '@/utils/formRules';
 
+<Form.Item
+  name="email"
+  label="邮箱"
+  rules={[formRules.required('邮箱'), formRules.email]}
+>
+  <Input />
+</Form.Item>
+```
+
+### 页面骨架
+
+```tsx
+import { Skeleton } from 'antd';
+
+{loading && data.length === 0 ? (
+  <Skeleton active paragraph={{ rows: 10 }} />
+) : (
+  <Table dataSource={data} loading={loading} />
+)}
+```
+
+## 目录结构
+
+```
+frontend/
+├── docs/                    # 文档目录
+│   ├── FRONTEND_DEVELOPMENT_GUIDE.md
+│   └── FRONTEND_QUICK_REFERENCE.md
+├── src/
+│   ├── hooks/              # React Hooks
+│   │   ├── useDebounce.ts
+│   │   ├── useAuth.ts
+│   │   └── index.ts
+│   ├── utils/              # 工具函数
+│   │   ├── formRules.ts
+│   │   └── debounce.ts
+│   └── ...
+```
+
+## 更多信息
+
+详细的使用说明和示例请查看 [开发规范文档](./docs/FRONTEND_DEVELOPMENT_GUIDE.md)。

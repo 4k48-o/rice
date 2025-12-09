@@ -2,7 +2,7 @@
  * 部门列表页面
  */
 import { useState, useEffect, useMemo } from 'react';
-import { Tree, Button, Space, Input, message, Popconfirm, Skeleton, Card, Table, Radio } from 'antd';
+import { Tree, Button, Space, message, Popconfirm, Skeleton, Card, Table, Radio } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, TableOutlined, ApartmentOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { getDepartmentTree, deleteDepartment } from '@/api/department';
@@ -13,6 +13,8 @@ import { QueryForm } from '@/components/QueryForm';
 import DepartmentForm from './DepartmentForm';
 import type { DataNode } from 'antd/es/tree';
 import type { ColumnsType } from 'antd/es/table';
+import { useDebounce } from '@/hooks/useDebounce';
+import { SearchInput } from '@/components/SearchInput';
 
 type ViewMode = 'tree' | 'table';
 
@@ -67,6 +69,9 @@ export default function DepartmentList() {
   useEffect(() => {
     loadDepartments();
   }, []);
+
+  // 防抖的刷新函数
+  const debouncedLoadDepartments = useDebounce(loadDepartments, 300);
 
   // 转换部门数据为Tree组件格式
   const convertToTreeData = (departments: Department[]): DataNode[] => {
@@ -460,7 +465,7 @@ export default function DepartmentList() {
       <QueryForm title={t('common.queryCondition')}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ minWidth: 80, flexShrink: 0 }}>{t('department.departmentName')}:</span>
-          <Input.Search
+          <SearchInput
             placeholder={t('department.searchDepartment')}
             style={{ flex: 1, width: '100%', maxWidth: 300 }}
             allowClear
@@ -531,7 +536,7 @@ export default function DepartmentList() {
           )}
         </Space>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadDepartments} loading={loading}>
+          <Button icon={<ReloadOutlined />} onClick={debouncedLoadDepartments} loading={loading}>
             {t('common.refresh')}
           </Button>
           <Permission permission="dept:create">

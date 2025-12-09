@@ -149,7 +149,7 @@ class RoleService:
     async def _assign_permissions(
         db: AsyncSession,
         role_id: str,
-        permission_ids: List[int]
+        permission_ids: List[str]
     ) -> None:
         """
         Assign permissions to a role.
@@ -159,17 +159,18 @@ class RoleService:
             role_id: Role ID
             permission_ids: List of permission IDs
         """
-        # Validate permissions exist
+        # Validate permissions exist and are actual permissions (type=2, not groups)
         stmt = select(Permission.id).where(
             Permission.id.in_(permission_ids),
-            Permission.is_deleted == False
+            Permission.is_deleted == False,
+            Permission.type == 2  # Only assign actual permissions, not groups (type=1)
         )
         result = await db.execute(stmt)
         valid_ids = {row[0] for row in result.all()}
         
         invalid_ids = set(permission_ids) - valid_ids
         if invalid_ids:
-            raise ValueError(f"Invalid permission IDs: {invalid_ids}")
+            raise ValueError(f"Invalid permission IDs (must be type=2): {invalid_ids}")
         
         # Get role to get tenant_id
         role = await db.get(Role, role_id)

@@ -67,13 +67,14 @@ export function formatGender(gender?: number): string {
 /**
  * 格式化数据权限
  */
-export function formatDataScope(scope: number): string {
+export function formatDataScope(scope: number, t?: (key: string) => string): string {
+  const translate = t || ((key: string) => i18n.t(key));
   const scopeMap: Record<number, string> = {
-    1: i18n.t('role.all'),
-    2: i18n.t('role.deptAndSub'),
-    3: i18n.t('role.deptOnly'),
-    4: i18n.t('role.selfOnly'),
-    5: i18n.t('role.custom'),
+    1: translate('role.all'),
+    2: translate('role.deptAndSub'),
+    3: translate('role.deptOnly'),
+    4: translate('role.selfOnly'),
+    5: translate('role.custom'),
   };
-  return scopeMap[scope] || i18n.t('common.unknown');
+  return scopeMap[scope] || translate('common.unknown');
 }

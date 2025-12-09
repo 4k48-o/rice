@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import get_db
 from app.api.deps import get_current_user
+from app.core.permissions import require_permissions
 from app.models.user import User
 from app.schemas.role import RoleCreate, RoleUpdate, RoleResponse, RoleWithPermissions
 from app.schemas.permission import PermissionResponse, PermissionTreeNode
 from app.services.role_service import role_service
 from app.services.permission_service import permission_service
 from app.core.i18n import i18n
-from app.core.permissions import require_permissions
 import time
 
 router = APIRouter(prefix="/roles", tags=["Roles"])
@@ -51,8 +51,14 @@ async def get_permission_tree(
     
     Requires permission: role:list
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     permissions = await permission_service.get_permissions(db, current_user.tenant_id)
+    logger.info(f"Found {len(permissions)} permissions for tenant_id={current_user.tenant_id}")
+    
     tree = permission_service.build_permission_tree(permissions)
+    logger.info(f"Built permission tree with {len(tree)} root nodes")
     
     return {
         "code": 200,
@@ -65,7 +71,7 @@ async def get_permission_tree(
 @router.get("/{role_id}", response_model=dict)
 @require_permissions("role:query")
 async def get_role(
-    role_id: int,
+    role_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -129,7 +135,7 @@ async def create_role(
 @router.put("/{role_id}", response_model=dict)
 @require_permissions("role:update")
 async def update_role(
-    role_id: int,
+    role_id: str,
     role_data: RoleUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -166,7 +172,7 @@ async def update_role(
 @router.delete("/{role_id}", response_model=dict)
 @require_permissions("role:delete")
 async def delete_role(
-    role_id: int,
+    role_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):

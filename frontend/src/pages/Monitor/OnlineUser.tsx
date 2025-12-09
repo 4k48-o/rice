@@ -2,12 +2,13 @@
  * 在线用户页面
  */
 import { useState, useEffect } from 'react';
-import { Table, Button, Space, message, Popconfirm } from 'antd';
+import { Table, Button, Space, message, Popconfirm, Skeleton, Card } from 'antd';
 import { ReloadOutlined, DisconnectOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { getOnlineUsers, forceLogoutUser } from '@/api/logs';
 import { Permission } from '@/components/Permission/Permission';
 import { formatDateTime } from '@/utils/format';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function OnlineUser() {
   const { t } = useTranslation();
@@ -29,6 +30,9 @@ export default function OnlineUser() {
   useEffect(() => {
     loadOnlineUsers();
   }, []);
+
+  // 防抖的刷新函数
+  const debouncedLoadOnlineUsers = useDebounce(loadOnlineUsers, 300);
 
   const handleForceLogout = async (userId: number) => {
     try {
@@ -101,19 +105,25 @@ export default function OnlineUser() {
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadOnlineUsers}>
+          <Button icon={<ReloadOutlined />} onClick={debouncedLoadOnlineUsers} loading={loading}>
             {t('common.refresh')}
           </Button>
         </Space>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={users}
-        rowKey="user_id"
-        loading={loading}
-        pagination={false}
-      />
+      <Card>
+        {loading && users.length === 0 ? (
+          <Skeleton active paragraph={{ rows: 10 }} />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={users}
+            rowKey="user_id"
+            loading={loading}
+            pagination={false}
+          />
+        )}
+      </Card>
     </div>
   );
 }

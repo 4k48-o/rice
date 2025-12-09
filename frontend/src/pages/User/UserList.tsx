@@ -12,10 +12,11 @@ import { Permission } from '@/components/Permission/Permission';
 import { QueryForm } from '@/components/QueryForm';
 // toIdString removed - IDs are now strings
 import { DepartmentSelect } from '@/components/DepartmentSelect';
+import { SearchInput } from '@/components/SearchInput';
 import UserForm from './UserForm';
 import dayjs, { Dayjs } from 'dayjs';
+import { useDebounce } from '@/hooks/useDebounce';
 
-const { Search } = Input;
 const { RangePicker } = DatePicker;
 
 export default function UserList() {
@@ -72,6 +73,9 @@ export default function UserList() {
     setPage(1);
   };
 
+  // 防抖的查询和刷新函数
+  const debouncedLoadUsers = useDebounce(loadUsers, 500);
+
   const handleDelete = async (id: number | string) => {
     try {
       // 使用公共方法转换 ID，避免 JavaScript 精度丢失
@@ -105,42 +109,50 @@ export default function UserList() {
       dataIndex: 'id',
       key: 'id',
       width: 80,
+      fixed: 'left' as const,
     },
     {
       title: t('user.username'),
       dataIndex: 'username',
       key: 'username',
+      width: 120,
     },
     {
       title: t('user.realName'),
       dataIndex: 'real_name',
       key: 'real_name',
+      width: 120,
     },
     {
       title: t('user.email'),
       dataIndex: 'email',
       key: 'email',
+      width: 180,
     },
     {
       title: t('user.phone'),
       dataIndex: 'phone',
       key: 'phone',
+      width: 120,
     },
     {
       title: t('user.department'),
       dataIndex: 'dept_name',
       key: 'dept_name',
+      width: 150,
     },
     {
       title: t('user.userType'),
       dataIndex: 'user_type',
       key: 'user_type',
+      width: 100,
       render: (type: number) => formatUserType(type),
     },
     {
       title: t('user.status'),
       dataIndex: 'status',
       key: 'status',
+      width: 100,
       render: (status: number) => {
         const { text, color } = formatStatus(status);
         return <span style={{ color }}>{text}</span>;
@@ -150,12 +162,14 @@ export default function UserList() {
       title: t('user.lastLoginTime'),
       dataIndex: 'last_login_time',
       key: 'last_login_time',
+      width: 180,
       render: (time: string) => formatDateTime(time),
     },
     {
       title: t('common.action'),
       key: 'action',
       width: 200,
+      fixed: 'right' as const,
       render: (_: any, record: User) => (
         <Space>
           <Permission permission="user:detail">
@@ -186,7 +200,7 @@ export default function UserList() {
           <Col xs={24} sm={12} md={8} lg={6}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ minWidth: 80, flexShrink: 0 }}>{t('user.username')}:</span>
-              <Search
+              <SearchInput
                 placeholder={t('user.searchUsername')}
                 onSearch={handleSearch}
                 style={{ flex: 1, width: '100%' }}
@@ -211,7 +225,7 @@ export default function UserList() {
                 placeholder={t('user.email')}
                 style={{ flex: 1, width: '100%' }}
                 allowClear
-                value={searchParams.email}
+                value={searchParams.email || ''}
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value) {
@@ -220,6 +234,7 @@ export default function UserList() {
                     const { email, ...rest } = searchParams;
                     setSearchParams(rest);
                   }
+                  setPage(1);
                 }}
                 onPressEnter={() => {
                   setPage(1);
@@ -312,7 +327,7 @@ export default function UserList() {
           </Col>
           <Col xs={24} sm={24} md={24} lg={24}>
             <Space>
-              <Button type="primary" onClick={() => loadUsers()}>
+              <Button type="primary" onClick={debouncedLoadUsers} loading={loading}>
                 {t('common.search')}
               </Button>
               <Button onClick={handleReset}>
@@ -327,7 +342,7 @@ export default function UserList() {
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
         <div></div>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadUsers} loading={loading}>
+          <Button icon={<ReloadOutlined />} onClick={debouncedLoadUsers} loading={loading}>
             {t('common.refresh')}
           </Button>
           <Permission permission="user:create">
@@ -348,6 +363,7 @@ export default function UserList() {
             dataSource={users}
             rowKey="id"
             loading={loading}
+            scroll={{ x: 1400 }}
             pagination={{
               current: page,
               pageSize,

@@ -87,9 +87,19 @@ export interface DepartmentSelectProps {
   maxTagCount?: number;
   
   /**
-   * 下拉框的宽度
+   * 下拉框的样式（已弃用，使用 styles.popup.root 代替）
+   * @deprecated 请使用 styles.popup.root
    */
   dropdownStyle?: React.CSSProperties;
+  
+  /**
+   * 下拉框的样式（新 API）
+   */
+  styles?: {
+    popup?: {
+      root?: React.CSSProperties;
+    };
+  };
 }
 
 /**
@@ -210,6 +220,7 @@ export default function DepartmentSelect({
   treeLine = false,
   maxTagCount,
   dropdownStyle,
+  styles,
 }: DepartmentSelectProps) {
   const { t } = useTranslation();
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -293,7 +304,11 @@ export default function DepartmentSelect({
       filterTreeNode={filterTreeNode || defaultFilterTreeNode}
       treeLine={treeLine}
       maxTagCount={maxTagCount}
-      dropdownStyle={dropdownStyle}
+      styles={{
+        popup: {
+          root: styles?.popup?.root || dropdownStyle,
+        },
+      }}
       notFoundContent={isLoading ? <Spin size="small" /> : null}
       // 使用 label 属性显示完整路径（更简洁高效）
       // 根据 Ant Design 文档，treeNodeLabelProp 可以指定选中节点显示的属性

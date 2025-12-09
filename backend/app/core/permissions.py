@@ -186,12 +186,14 @@ async def get_user_permissions(db: AsyncSession, user: User) -> Set[str]:
         return set()
     
     # Get permissions for these roles
+    # Only get type=2 permissions (actual permissions, not groups)
     stmt = select(Permission.code).join(
         RolePermission, RolePermission.permission_id == Permission.id
     ).where(
         RolePermission.role_id.in_(role_ids),
         Permission.status == 1,
-        Permission.is_deleted == False
+        Permission.is_deleted == False,
+        Permission.type == 2  # Only actual permissions, not groups (type=1)
     )
     result = await db.execute(stmt)
     permissions = {row[0] for row in result.all() if row[0]}

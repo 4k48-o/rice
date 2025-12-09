@@ -2,14 +2,15 @@
  * 登录日志页面
  */
 import { useState, useEffect } from 'react';
-import { Table, Button, Space, Input, Select, DatePicker, message } from 'antd';
+import { Table, Button, Space, Input, Select, DatePicker, message, Skeleton, Card } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { getLoginLogs } from '@/api/logs';
 import { formatDateTime } from '@/utils/format';
+import { useDebounce } from '@/hooks/useDebounce';
+import { SearchInput } from '@/components/SearchInput';
 import dayjs from 'dayjs';
 
-const { Search } = Input;
 const { RangePicker } = DatePicker;
 
 export default function LoginLog() {
@@ -50,6 +51,9 @@ export default function LoginLog() {
   useEffect(() => {
     loadLogs();
   }, [page, pageSize, searchParams]);
+
+  // 防抖的刷新函数
+  const debouncedLoadLogs = useDebounce(loadLogs, 300);
 
   const handleSearch = (value: string) => {
     setSearchParams({ ...searchParams, username: value });
@@ -125,7 +129,7 @@ export default function LoginLog() {
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <Space wrap>
-          <Search
+          <SearchInput
             placeholder={t('user.searchUsername')}
             onSearch={handleSearch}
             style={{ width: 300 }}
@@ -147,29 +151,35 @@ export default function LoginLog() {
           />
         </Space>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadLogs}>
+          <Button icon={<ReloadOutlined />} onClick={debouncedLoadLogs} loading={loading}>
             {t('common.refresh')}
           </Button>
         </Space>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={logs}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize,
-          total,
-          showSizeChanger: true,
+      <Card>
+        {loading && logs.length === 0 ? (
+          <Skeleton active paragraph={{ rows: 10 }} />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={logs}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              current: page,
+              pageSize,
+              total,
+              showSizeChanger: true,
               showTotal: (total) => t('common.total', { total }),
-          onChange: (page, pageSize) => {
-            setPage(page);
-            setPageSize(pageSize);
-          },
-        }}
-      />
+              onChange: (page, pageSize) => {
+                setPage(page);
+                setPageSize(pageSize);
+              },
+            }}
+          />
+        )}
+      </Card>
     </div>
   );
 }
