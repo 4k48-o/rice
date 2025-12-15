@@ -339,6 +339,10 @@ class UserService:
                         tenant_id=user.tenant_id
                     )
                     db.add(user_role)
+            
+            # Clear user permission cache when roles change
+            from app.core.permissions import clear_user_permission_cache
+            await clear_user_permission_cache(user_id)
         
         await db.flush()  # Flush changes to get updated user
         await db.refresh(user)  # Refresh to get latest state

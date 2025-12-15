@@ -26,17 +26,28 @@ export function useAuth() {
       setRefreshToken(refresh_token);
       
       if (user_info) {
-        // 后端返回的user_info可能不包含permissions，需要单独获取
+        // 后端返回的user_info包含完整信息
         const userInfoData: any = {
           id: user_info.id,
           username: user_info.username,
           real_name: user_info.real_name,
           avatar: user_info.avatar,
           user_type: user_info.user_type || 0,
+          tenant_id: user_info.tenant_id,
         };
         setUserInfo(userInfoData);
-        // permissions需要从user_info中获取，如果没有则设为空数组
+        // permissions从user_info中获取，如果没有则设为空数组
         setPermissions(user_info.permissions || []);
+      } else {
+        // 如果没有user_info，尝试从getUserInfo获取完整信息
+        try {
+          const userInfoResponse = await getUserInfo();
+          const userInfoData = userInfoResponse.data;
+          setUserInfo(userInfoData);
+          setPermissions(userInfoData.permissions || []);
+        } catch (error) {
+          console.error('Failed to get user info:', error);
+        }
       }
 
       // 获取用户菜单
@@ -90,11 +101,25 @@ export function useAuth() {
         if (!userInfo) {
           try {
             const response = await getUserInfo();
-            setUserInfo(response.data);
-            setPermissions(response.data.permissions || []);
+            const userInfoData = response.data;
+            setUserInfo(userInfoData);
+            // 确保权限信息正确设置
+            setPermissions(userInfoData.permissions || []);
           } catch (error) {
+            console.error('Failed to get user info:', error);
             clearAuth();
             return;
+          }
+        } else {
+          // 如果已有用户信息但没有权限信息，尝试刷新
+          const currentPermissions = useAuthStore.getState().permissions;
+          if (!currentPermissions || currentPermissions.length === 0) {
+            try {
+              const response = await getUserInfo();
+              setPermissions(response.data.permissions || []);
+            } catch (error) {
+              console.error('Failed to refresh permissions:', error);
+            }
           }
         }
         

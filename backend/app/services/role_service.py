@@ -105,6 +105,9 @@ class RoleService:
         update_data = role_data.model_dump(exclude_unset=True)
         permission_ids = update_data.pop("permission_ids", None)
         
+        # Track if data_scope changed (affects cache)
+        data_scope_changed = "data_scope" in update_data
+        
         # Update role fields
         for field, value in update_data.items():
             setattr(role, field, value)
@@ -120,6 +123,10 @@ class RoleService:
             # Assign new permissions
             if permission_ids:
                 await RoleService._assign_permissions(db, role_id, permission_ids)
+        
+        # Clear cache for all users with this role if permissions or data_scope changed
+        if permission_ids is not None or data_scope_changed:
+            await RoleService._clear_users_cache_for_role(db, role_id)
         
         await db.refresh(role)
         return role
@@ -187,6 +194,26 @@ class RoleService:
             db.add(role_perm)
         
         await db.flush()
+    
+    @staticmethod
+    async def _clear_users_cache_for_role(db: AsyncSession, role_id: str) -> None:
+        """
+        Clear permission cache for all users who have this role.
+        
+        Args:
+            db: Database session
+            role_id: Role ID
+        """
+        from app.core.permissions import clear_user_permission_cache
+        
+        # Get all user IDs with this role
+        stmt = select(UserRole.user_id).where(UserRole.role_id == role_id)
+        result = await db.execute(stmt)
+        user_ids = [row[0] for row in result.all()]
+        
+        # Clear cache for all affected users
+        for user_id in user_ids:
+            await clear_user_permission_cache(user_id)
 
 
 # Global instance

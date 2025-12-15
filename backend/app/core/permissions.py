@@ -15,6 +15,18 @@ from app.models.user import User
 from app.core.i18n import i18n
 
 
+async def clear_user_permission_cache(user_id) -> None:
+    """
+    Clear permission cache for a user.
+    This should be called when user's roles or permissions change.
+    
+    Args:
+        user_id: User ID
+    """
+    from app.utils.cache import PermissionCache
+    await PermissionCache.clear_all_user_cache(user_id)
+
+
 class DataScope(IntEnum):
     """Data scope for role-based data filtering."""
     ALL = 1              # 全部数据
@@ -166,6 +178,7 @@ def require_roles(*role_codes: str):
 async def get_user_permissions(db: AsyncSession, user: User) -> Set[str]:
     """
     Get all permission codes for a user.
+    Uses cache to improve performance.
     
     Args:
         db: Database session
@@ -174,6 +187,14 @@ async def get_user_permissions(db: AsyncSession, user: User) -> Set[str]:
     Returns:
         Set of permission codes
     """
+    from app.utils.cache import PermissionCache
+    
+    # Try to get from cache first
+    cached_permissions = await PermissionCache.get_user_permissions(user.id)
+    if cached_permissions is not None:
+        return cached_permissions
+    
+    # Cache miss, query from database
     from app.models.associations import UserRole, RolePermission
     from app.models.permission import Permission
     
@@ -183,20 +204,23 @@ async def get_user_permissions(db: AsyncSession, user: User) -> Set[str]:
     role_ids = [row[0] for row in result.all()]
     
     if not role_ids:
-        return set()
+        permissions = set()
+    else:
+        # Get permissions for these roles
+        # Only get type=2 permissions (actual permissions, not groups)
+        stmt = select(Permission.code).join(
+            RolePermission, RolePermission.permission_id == Permission.id
+        ).where(
+            RolePermission.role_id.in_(role_ids),
+            Permission.status == 1,
+            Permission.is_deleted == False,
+            Permission.type == 2  # Only actual permissions, not groups (type=1)
+        )
+        result = await db.execute(stmt)
+        permissions = {row[0] for row in result.all() if row[0]}
     
-    # Get permissions for these roles
-    # Only get type=2 permissions (actual permissions, not groups)
-    stmt = select(Permission.code).join(
-        RolePermission, RolePermission.permission_id == Permission.id
-    ).where(
-        RolePermission.role_id.in_(role_ids),
-        Permission.status == 1,
-        Permission.is_deleted == False,
-        Permission.type == 2  # Only actual permissions, not groups (type=1)
-    )
-    result = await db.execute(stmt)
-    permissions = {row[0] for row in result.all() if row[0]}
+    # Cache the result (fire and forget, don't wait for completion)
+    await PermissionCache.set_user_permissions(user.id, permissions)
     
     return permissions
 
@@ -204,6 +228,7 @@ async def get_user_permissions(db: AsyncSession, user: User) -> Set[str]:
 async def get_user_roles(db: AsyncSession, user: User) -> Set[str]:
     """
     Get all role codes for a user.
+    Uses cache to improve performance.
     
     Args:
         db: Database session
@@ -212,6 +237,14 @@ async def get_user_roles(db: AsyncSession, user: User) -> Set[str]:
     Returns:
         Set of role codes
     """
+    from app.utils.cache import PermissionCache
+    
+    # Try to get from cache first
+    cached_roles = await PermissionCache.get_user_roles(user.id)
+    if cached_roles is not None:
+        return cached_roles
+    
+    # Cache miss, query from database
     from app.models.associations import UserRole
     from app.models.role import Role
     
@@ -225,12 +258,16 @@ async def get_user_roles(db: AsyncSession, user: User) -> Set[str]:
     result = await db.execute(stmt)
     roles = {row[0] for row in result.all() if row[0]}
     
+    # Cache the result (fire and forget, don't wait for completion)
+    await PermissionCache.set_user_roles(user.id, roles)
+    
     return roles
 
 
 async def get_user_data_scope(db: AsyncSession, user: User) -> DataScope:
     """
     Get user's data scope (the most permissive one if user has multiple roles).
+    Uses cache to improve performance.
     
     Args:
         db: Database session
@@ -239,6 +276,14 @@ async def get_user_data_scope(db: AsyncSession, user: User) -> DataScope:
     Returns:
         DataScope enum value
     """
+    from app.utils.cache import PermissionCache
+    
+    # Try to get from cache first
+    cached_data_scope = await PermissionCache.get_user_data_scope(user.id)
+    if cached_data_scope is not None:
+        return DataScope(cached_data_scope)
+    
+    # Cache miss, query from database
     from app.models.associations import UserRole
     from app.models.role import Role
     
@@ -253,15 +298,21 @@ async def get_user_data_scope(db: AsyncSession, user: User) -> DataScope:
     data_scopes = [row[0] for row in result.all() if row[0] is not None]
     
     if not data_scopes:
-        return DataScope.SELF  # Default to most restrictive
+        data_scope = DataScope.SELF  # Default to most restrictive
+    else:
+        # Return the most permissive scope (lowest number)
+        data_scope = DataScope(min(data_scopes))
     
-    # Return the most permissive scope (lowest number)
-    return DataScope(min(data_scopes))
+    # Cache the result
+    await PermissionCache.set_user_data_scope(user.id, data_scope.value)
+    
+    return data_scope
 
 
 async def apply_data_scope_filter(db: AsyncSession, query, user: User, model, user_field: str = "created_by"):
     """
     Apply data scope filter to a query.
+    Optimized to minimize database queries.
     
     Args:
         db: Database session (Required for async queries)
@@ -277,38 +328,39 @@ async def apply_data_scope_filter(db: AsyncSession, query, user: User, model, us
     if user.user_type == 0:
         return query
     
-    # Get user roles with their data scopes and custom departments
+    # Get user roles with their data scopes - optimized single query
     from app.models.associations import UserRole, RoleDepartment
     from app.models.role import Role
     
-    stmt = select(Role).join(
+    # Single query to get all roles with data_scope for the user
+    stmt = select(Role.id, Role.data_scope).join(
         UserRole, UserRole.role_id == Role.id
     ).where(
         UserRole.user_id == user.id,
         Role.status == 1,
         Role.is_deleted == False
-    ).options(
-        select(Role.custom_departments).selectinload(Role.custom_departments) 
-        # Note: Ideally we pre-load this or join explicitly. 
-        # For simple logic, we fetch roles first.
     )
     
-    # We need to execute key steps:
-    # 1. Fetch all roles for the user
     result = await db.execute(stmt)
-    roles = result.scalars().all()
+    roles_data = result.all()
     
-    if not roles:
+    if not roles_data:
         # No role => No data access (safe default? or SELF?)
         # Let's default to SELF to be safe but usable
         return query.where(getattr(model, user_field) == user.id)
 
-    # 2. Find the most permissive scope (min value)
-    # 1:ALL, 2:DEPT, 3:DEPT_AND_SUB, 4:SELF, 5:CUSTOM
-    min_scope_val = min(role.data_scope for role in roles)
-    scope = DataScope(min_scope_val)
+    # Extract role IDs and data scopes
+    role_ids = [row[0] for row in roles_data]
+    data_scopes = [row[1] for row in roles_data if row[1] is not None]
     
-    # 3. Apply filter
+    # Find the most permissive scope (min value)
+    # 1:ALL, 2:DEPT, 3:DEPT_AND_SUB, 4:SELF, 5:CUSTOM
+    if not data_scopes:
+        scope = DataScope.SELF
+    else:
+        scope = DataScope(min(data_scopes))
+    
+    # Apply filter based on scope
     if scope == DataScope.ALL:
         return query
         
@@ -332,23 +384,25 @@ async def apply_data_scope_filter(db: AsyncSession, query, user: User, model, us
             return query.where(getattr(model, user_field) == user.id)
             
     elif scope == DataScope.CUSTOM:
-        # Collect all custom dept IDs from roles with CUSTOM scope
-        custom_dept_ids = set()
-        for role in roles:
-            if role.data_scope == DataScope.CUSTOM.value:
-                # We need to fetch custom departments. 
-                # Since we didn't eager load efficiently above (complex join), 
-                # we query the association table directly for better perf.
-                stmt_custom = select(RoleDepartment.department_id).where(RoleDepartment.role_id == role.id)
-                res_custom = await db.execute(stmt_custom)
-                custom_dept_ids.update(res_custom.scalars().all())
+        # Optimized: Single query to get all custom dept IDs for all CUSTOM scope roles
+        custom_role_ids = [row[0] for row in roles_data if row[1] == DataScope.CUSTOM.value]
+        
+        if custom_role_ids:
+            # Single query to get all custom department IDs
+            stmt_custom = select(RoleDepartment.department_id).where(
+                RoleDepartment.role_id.in_(custom_role_ids)
+            )
+            res_custom = await db.execute(stmt_custom)
+            custom_dept_ids = {row[0] for row in res_custom.all()}
+        else:
+            custom_dept_ids = set()
         
         if hasattr(model, 'dept_id'):
             if custom_dept_ids:
                 return query.where(model.dept_id.in_(custom_dept_ids))
             else:
-                # Custom scope but no depts configured -> Empty result? Or Self?
-                return query.where(1 == 0) # Empty result
+                # Custom scope but no depts configured -> Empty result
+                return query.where(1 == 0)
         else:
             return query.where(getattr(model, user_field) == user.id)
             

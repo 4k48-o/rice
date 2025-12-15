@@ -151,11 +151,40 @@ async def refresh_token(
 
 
 @router.post("/logout", response_model=Response)
-async def logout():
+async def logout(
+    request: Request,
+    current_user: User = Depends(deps.get_current_user),
+):
     """
     User logout endpoint.
+    Blacklists the current access token and clears user session.
     """
-    # TODO: Implement logout logic (blacklist token in Redis)
+    from app.core.security import blacklist_token, decode_token, get_token_expiry_seconds
+    
+    # Get token from authorization header
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+    
+    token = auth_header.replace("Bearer ", "")
+    
+    # Decode token to get expiry time
+    payload = decode_token(token)
+    if payload:
+        # Add token to blacklist with remaining TTL
+        expires_in = get_token_expiry_seconds(payload)
+        if expires_in > 0:
+            await blacklist_token(token, expires_in)
+    
+    # Clear user session in Redis (if single session mode is enabled)
+    if settings.SINGLE_SESSION_MODE:
+        from app.core.redis import RedisClient
+        redis = RedisClient.get_client()
+        await redis.delete(f"user_session:{current_user.id}")
+    
     return {
         "code": 200,
         "message": "Logout successful",
@@ -170,10 +199,33 @@ async def get_user_info(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Get current user information.
+    Get current user information including roles and permissions.
     """
-    # Get user roles and permissions
-    # TODO: Implement role and permission fetching
+    from app.core.permissions import get_user_permissions, get_user_roles, get_user_data_scope
+    from app.services.user_service import user_service
+    
+    # Get user roles with details
+    roles = await user_service.get_user_roles(db, current_user.id)
+    roles_data = [
+        {
+            "id": role.id,
+            "name": role.name,
+            "code": role.code,
+            "data_scope": role.data_scope
+        }
+        for role in roles
+    ]
+    
+    # Get user permissions (uses cache)
+    if current_user.user_type == 0:
+        # Super admin has all permissions
+        permissions = ["*"]
+    else:
+        user_permissions = await get_user_permissions(db, current_user)
+        permissions = sorted(list(user_permissions))
+    
+    # Get data scope
+    data_scope = await get_user_data_scope(db, current_user)
     
     return {
         "code": 200,
@@ -184,8 +236,10 @@ async def get_user_info(
             "real_name": current_user.real_name,
             "avatar": current_user.avatar,
             "tenant_id": current_user.tenant_id,
-            "roles": [],  # TODO
-            "permissions": ["*"] if current_user.user_type == 0 else [] 
+            "user_type": current_user.user_type,
+            "roles": roles_data,
+            "permissions": permissions,
+            "data_scope": data_scope.value
         },
         "timestamp": int(time.time()),
     }

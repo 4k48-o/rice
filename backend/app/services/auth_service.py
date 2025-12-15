@@ -189,7 +189,18 @@ class AuthService:
             "tenant_id": user.tenant_id,
             "type": "access"
         }
-        access_token = create_access_token(data=claims)
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(data=claims, expires_delta=access_token_expires)
+        
+        # Update Redis session if single session mode is enabled
+        if getattr(settings, "SINGLE_SESSION_MODE", False):
+            from app.core.redis import RedisClient
+            redis = RedisClient.get_client()
+            await redis.set(
+                f"user_session:{user.id}",
+                access_token,
+                ex=int(access_token_expires.total_seconds())
+            )
         
         return {
             "access_token": access_token,

@@ -19,14 +19,23 @@ export interface TokenResponse {
   user_info?: UserInfo;
 }
 
-export interface UserInfo {
+export interface RoleInfo {
   id: number;
+  name: string;
+  code: string;
+  data_scope?: number;
+}
+
+export interface UserInfo {
+  id: number | string;
   username: string;
   real_name?: string;
   avatar?: string;
-  roles?: string[];
-  permissions?: string[];
+  tenant_id?: number | string;
   user_type?: number;
+  roles?: RoleInfo[];
+  permissions?: string[];
+  data_scope?: number;
 }
 
 export interface MenuNode {

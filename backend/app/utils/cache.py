@@ -334,3 +334,279 @@ class DepartmentCache:
         
         return False
 
+
+class PermissionCache:
+    """用户权限数据缓存工具类"""
+    
+    # 缓存键前缀
+    CACHE_KEY_PERMISSIONS = "user:permissions:{user_id}"
+    CACHE_KEY_ROLES = "user:roles:{user_id}"
+    CACHE_KEY_DATA_SCOPE = "user:data_scope:{user_id}"
+    
+    # 缓存过期时间（秒）- 15分钟
+    CACHE_EXPIRE_SECONDS = 15 * 60
+    
+    @staticmethod
+    def _get_redis() -> Optional[Redis]:
+        """获取Redis客户端，失败时返回None"""
+        try:
+            return RedisClient.get_client()
+        except Exception as e:
+            logger.warning(f"Failed to get Redis client: {e}")
+            return None
+    
+    @staticmethod
+    async def get_user_permissions(user_id: Union[int, str]) -> Optional[set]:
+        """
+        获取用户权限缓存
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            权限码集合，缓存未命中返回None
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return None
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_PERMISSIONS.format(user_id=_to_id_string(user_id))
+            cached_data = await redis.get(cache_key)
+            if cached_data:
+                permissions_list = json.loads(cached_data)
+                return set(permissions_list)
+        except Exception as e:
+            logger.warning(f"Failed to get user permissions from cache: {e}")
+        
+        return None
+    
+    @staticmethod
+    async def set_user_permissions(user_id: Union[int, str], permissions: set) -> bool:
+        """
+        设置用户权限缓存
+        
+        Args:
+            user_id: 用户ID
+            permissions: 权限码集合
+            
+        Returns:
+            是否设置成功
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return False
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_PERMISSIONS.format(user_id=_to_id_string(user_id))
+            permissions_list = list(permissions)
+            cached_data = json.dumps(permissions_list, ensure_ascii=False)
+            await redis.set(cache_key, cached_data, ex=PermissionCache.CACHE_EXPIRE_SECONDS)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to set user permissions to cache: {e}")
+        
+        return False
+    
+    @staticmethod
+    async def get_user_roles(user_id: Union[int, str]) -> Optional[set]:
+        """
+        获取用户角色缓存
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            角色码集合，缓存未命中返回None
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return None
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_ROLES.format(user_id=_to_id_string(user_id))
+            cached_data = await redis.get(cache_key)
+            if cached_data:
+                roles_list = json.loads(cached_data)
+                return set(roles_list)
+        except Exception as e:
+            logger.warning(f"Failed to get user roles from cache: {e}")
+        
+        return None
+    
+    @staticmethod
+    async def set_user_roles(user_id: Union[int, str], roles: set) -> bool:
+        """
+        设置用户角色缓存
+        
+        Args:
+            user_id: 用户ID
+            roles: 角色码集合
+            
+        Returns:
+            是否设置成功
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return False
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_ROLES.format(user_id=_to_id_string(user_id))
+            roles_list = list(roles)
+            cached_data = json.dumps(roles_list, ensure_ascii=False)
+            await redis.set(cache_key, cached_data, ex=PermissionCache.CACHE_EXPIRE_SECONDS)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to set user roles to cache: {e}")
+        
+        return False
+    
+    @staticmethod
+    async def get_user_data_scope(user_id: Union[int, str]) -> Optional[int]:
+        """
+        获取用户数据权限范围缓存
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            数据权限范围值（DataScope枚举值），缓存未命中返回None
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return None
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_DATA_SCOPE.format(user_id=_to_id_string(user_id))
+            cached_data = await redis.get(cache_key)
+            if cached_data:
+                return int(cached_data)
+        except Exception as e:
+            logger.warning(f"Failed to get user data scope from cache: {e}")
+        
+        return None
+    
+    @staticmethod
+    async def set_user_data_scope(user_id: Union[int, str], data_scope: int) -> bool:
+        """
+        设置用户数据权限范围缓存
+        
+        Args:
+            user_id: 用户ID
+            data_scope: 数据权限范围值（DataScope枚举值）
+            
+        Returns:
+            是否设置成功
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return False
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_DATA_SCOPE.format(user_id=_to_id_string(user_id))
+            await redis.set(cache_key, str(data_scope), ex=PermissionCache.CACHE_EXPIRE_SECONDS)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to set user data scope to cache: {e}")
+        
+        return False
+    
+    @staticmethod
+    async def clear_user_permissions(user_id: Union[int, str]) -> bool:
+        """
+        清除用户权限缓存
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            是否清除成功
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return False
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_PERMISSIONS.format(user_id=_to_id_string(user_id))
+            await redis.delete(cache_key)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to clear user permissions cache: {e}")
+        
+        return False
+    
+    @staticmethod
+    async def clear_user_roles(user_id: Union[int, str]) -> bool:
+        """
+        清除用户角色缓存
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            是否清除成功
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return False
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_ROLES.format(user_id=_to_id_string(user_id))
+            await redis.delete(cache_key)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to clear user roles cache: {e}")
+        
+        return False
+    
+    @staticmethod
+    async def clear_user_data_scope(user_id: Union[int, str]) -> bool:
+        """
+        清除用户数据权限范围缓存
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            是否清除成功
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return False
+        
+        try:
+            cache_key = PermissionCache.CACHE_KEY_DATA_SCOPE.format(user_id=_to_id_string(user_id))
+            await redis.delete(cache_key)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to clear user data scope cache: {e}")
+        
+        return False
+    
+    @staticmethod
+    async def clear_all_user_cache(user_id: Union[int, str]) -> bool:
+        """
+        清除用户所有权限相关缓存
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            是否清除成功
+        """
+        redis = PermissionCache._get_redis()
+        if not redis:
+            return False
+        
+        try:
+            permissions_key = PermissionCache.CACHE_KEY_PERMISSIONS.format(user_id=_to_id_string(user_id))
+            roles_key = PermissionCache.CACHE_KEY_ROLES.format(user_id=_to_id_string(user_id))
+            data_scope_key = PermissionCache.CACHE_KEY_DATA_SCOPE.format(user_id=_to_id_string(user_id))
+            
+            await redis.delete(permissions_key, roles_key, data_scope_key)
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to clear all user permission cache: {e}")
+        
+        return False
+

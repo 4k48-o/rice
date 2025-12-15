@@ -112,6 +112,83 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
+def get_token_expiry_seconds(payload: dict) -> int:
+    """
+    Get remaining seconds until token expiry.
+    
+    Args:
+        payload: Decoded JWT payload
+        
+    Returns:
+        Remaining seconds until expiry, or 0 if already expired
+    """
+    exp = payload.get("exp")
+    if not exp:
+        return 0
+    
+    import time
+    remaining = exp - int(time.time())
+    return max(0, remaining)
+
+
+def _get_token_hash(token: str) -> str:
+    """
+    Get hash of token for use as cache key.
+    
+    Args:
+        token: JWT token string
+        
+    Returns:
+        SHA256 hash of token
+    """
+    import hashlib
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+async def is_token_blacklisted(token: str) -> bool:
+    """
+    Check if a token is blacklisted.
+    
+    Args:
+        token: JWT token string
+        
+    Returns:
+        True if token is blacklisted, False otherwise
+    """
+    try:
+        from app.core.redis import RedisClient
+        redis = RedisClient.get_client()
+        token_hash = _get_token_hash(token)
+        blacklisted = await redis.get(f"token:blacklist:{token_hash}")
+        return blacklisted is not None
+    except Exception:
+        # If Redis fails, assume token is not blacklisted (fail open)
+        return False
+
+
+async def blacklist_token(token: str, expires_in_seconds: int) -> bool:
+    """
+    Add a token to the blacklist.
+    
+    Args:
+        token: JWT token string
+        expires_in_seconds: Time in seconds until token expires (used as TTL)
+        
+    Returns:
+        True if successfully blacklisted, False otherwise
+    """
+    try:
+        from app.core.redis import RedisClient
+        redis = RedisClient.get_client()
+        # Use token hash as key to avoid storing full token
+        token_hash = _get_token_hash(token)
+        await redis.set(f"token:blacklist:{token_hash}", "1", ex=expires_in_seconds)
+        return True
+    except Exception:
+        # If Redis fails, log but don't fail the request
+        return False
+
+
 def validate_password_strength(password: str) -> bool:
     """
     Validate password strength based on configuration.
